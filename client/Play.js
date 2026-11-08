@@ -5,6 +5,7 @@ import { View } from '@fatlard1993/web-game-framework/ui';
 import { STEPS_PER_SECOND, unpack } from '../sand.js';
 import { SCALE, drawBoard } from './drawBoard.js';
 import { pickLevel } from './LevelPicker.js';
+import { confetti } from './confetti.js';
 import { sounds } from './sounds.js';
 
 const Board = styled(
@@ -137,12 +138,16 @@ export default class Play extends View {
 
 		pick('pen');
 
+		let party;
 		const draw = () => {
 			drawBoard(pen, state, drawing);
 
+			if (party?.(pen)) redraw();
+			else party = undefined;
+
 			const counts = state.cups.map(cup => `${dots[cup.color] ?? '🪣'} ${Math.min(cup.count, cup.need)}/${cup.need}`).join('  ');
 
-			status.elem.textContent = `🏁 ${state.level + 1}   ${state.won ? '🎉' : state.spoiled ? '❌ 🔄' : counts}`;
+			status.elem.textContent = `🏁 ${state.level + 1}   ${state.won ? (state.level === game.levelCount - 1 ? '🏆🎉' : '🎉') : state.spoiled ? '❌ 🔄' : counts}`;
 			next.elem.style.display = state.won ? '' : 'none';
 		};
 
@@ -216,7 +221,13 @@ export default class Play extends View {
 			const secondsAfter = Math.ceil(after.wait / STEPS_PER_SECOND);
 
 			if (secondsAfter !== secondsBefore) secondsAfter ? sounds.count() : sounds.go();
-			if (after.won && !before.won) sounds.win();
+			if (after.won && !before.won) {
+				if (state.level === game.levelCount - 1) {
+					sounds.party();
+					party = confetti(canvas.width, canvas.height);
+					redraw();
+				} else sounds.win();
+			}
 			if (after.spoiled && !before.spoiled) sounds.spoil();
 			if (inCups(after) > inCups(before) && Date.now() - plopAt > 90) {
 				plopAt = Date.now();

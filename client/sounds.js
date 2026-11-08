@@ -33,6 +33,10 @@ export const sounds = {
 	go: () => note(880, { length: 0.3, type: 'square', volume: 0.08 }),
 	plop: () => note(500 + Math.random() * 300, { length: 0.05, volume: 0.06, slideTo: 200 }),
 	win: () => [523, 659, 784, 1047].forEach((frequency, at) => note(frequency, { start: at * 0.12, length: 0.3 })),
+	party: () =>
+		[523, 659, 784, 659, 784, 1047, 784, 1047, 1319].forEach((frequency, at) =>
+			note(frequency, { start: at * 0.14, length: 0.25, type: at % 2 ? 'triangle' : 'square', volume: 0.12 }),
+		),
 	spoil: () =>
 		[392, 330, 262].forEach((frequency, at) =>
 			note(frequency, { start: at * 0.25, length: 0.35, type: 'triangle', slideTo: frequency * 0.9 }),
