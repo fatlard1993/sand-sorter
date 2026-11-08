@@ -4,7 +4,8 @@ const names = ['🐢', '🦊', '🐸', '🐙', '🦄', '🐝', '🐧', '🦖'];
 
 // Into a game with no form to fill: the same player as last time, or a new one named by an animal
 export const goIn = async gameId => {
-	const name = localStorage.getItem('lastName') || names[Math.floor(Math.random() * names.length)];
+	const saved = localStorage.getItem('lastName');
+	const name = names.includes(saved) ? saved : names[Math.floor(Math.random() * names.length)];
 	const join = await joinGame(gameId, { body: { name, playerId: localStorage.getItem(gameId) } });
 
 	if (join.status !== 'success') {
@@ -14,6 +15,6 @@ export const goIn = async gameId => {
 	}
 
 	localStorage.setItem(gameId, join.body.id);
-	localStorage.setItem('lastName', join.body.name);
+	localStorage.setItem('lastName', name);
 	window.location.href = `#/play/${gameId}`;
 };

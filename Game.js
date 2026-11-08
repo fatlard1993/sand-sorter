@@ -5,9 +5,6 @@ import { HEIGHT, WIDTH, buildWalls, levels, newRound, pack, step } from './sand.
 const TICK_MS = 33;
 const STEPS_PER_TICK = 2;
 
-// `bun --hot` makes new games from the save file on every change; one timer per game id keeps the old ones from ticking
-globalThis.sandTimers ??= {};
-
 // One running game, on the server. `state` is the round: its lines, its sand, its cups. The sand falls here, and every
 // page draws what it's sent (client/Play.js).
 export default class Game extends BaseGame {
@@ -17,18 +14,23 @@ export default class Game extends BaseGame {
 		this.state = options.saveState?.state?.walls ? options.saveState.state : newRound(0);
 		this.walls = buildWalls(this.state);
 
-		clearInterval(globalThis.sandTimers[this.id]);
-		globalThis.sandTimers[this.id] = setInterval(() => this.tick(), TICK_MS);
+		this.timer = setInterval(() => {
+			try {
+				this.tick();
+			} catch (error) {
+				this.logger.error('Sand stopped', { gameId: this.id, error: error.stack });
+				clearInterval(this.timer);
+			}
+		}, TICK_MS);
 	}
 
 	tick() {
+		// Deleted, or replaced by a fresh copy from the save file (`bun --hot` makes one on every change)
 		if (this.server?.games[this.id] !== this) {
-			clearInterval(globalThis.sandTimers[this.id]);
+			clearInterval(this.timer);
 
 			return;
 		}
-
-		if (!this.players.size) return;
 
 		let changed = false;
 
@@ -73,10 +75,12 @@ export default class Game extends BaseGame {
 	}
 
 	onPlayerAdded() {
+		this.save();
 		this.announce();
 	}
 
 	onPlayerRemoved() {
+		this.save();
 		this.announce();
 	}
 }
