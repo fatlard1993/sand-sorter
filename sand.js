@@ -70,6 +70,48 @@ export const levels = [
 			{ x: 62, y: 90, width: 14, height: 16, color: 'blue', need: 90 },
 		],
 	},
+	{
+		par: 110,
+		spouts: [{ x: 40, color: 'yellow', amount: 400 }],
+		paints: [{ x: 8, y: 50, width: 16, height: 8, color: 'blue' }],
+		cups: [
+			{ x: 6, y: 90, width: 14, height: 16, color: 'blue', need: 90 },
+			{ x: 60, y: 90, width: 14, height: 16, color: 'yellow', need: 90 },
+		],
+	},
+	{
+		par: 60,
+		spouts: [{ x: 8, color: 'yellow', amount: 350 }],
+		walls: [
+			[
+				[0, 45],
+				[30, 45],
+			],
+			[
+				[50, 70],
+				[79, 70],
+			],
+		],
+		cups: [{ x: 62, y: 50, width: 14, height: 14, color: 'yellow', need: 100 }],
+	},
+	{
+		par: 120,
+		spouts: [
+			{ x: 14, color: 'yellow', amount: 300 },
+			{ x: 66, color: 'yellow', amount: 300 },
+		],
+		paints: [{ x: 60, y: 40, width: 14, height: 8, color: 'red' }],
+		walls: [
+			[
+				[40, 30],
+				[40, 105],
+			],
+		],
+		cups: [
+			{ x: 22, y: 90, width: 14, height: 16, color: 'yellow', need: 90 },
+			{ x: 46, y: 90, width: 14, height: 16, color: 'red', need: 90 },
+		],
+	},
 ];
 
 const index = (x, y) => y * WIDTH + x;
