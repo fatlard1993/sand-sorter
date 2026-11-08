@@ -2,7 +2,7 @@ import { Button, Component, Link, styled, theme } from '@vanilla-bean/components
 import { gameContext, getGame, onMessage, socket } from '@fatlard1993/web-game-framework/client';
 import { View } from '@fatlard1993/web-game-framework/ui';
 
-import { unpack } from '../sand.js';
+import { SPOUT_WIDTH, STEPS_PER_SECOND, unpack } from '../sand.js';
 
 const SCALE = 6;
 
@@ -165,6 +165,29 @@ export default class Play extends View {
 				pen.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
 			}
 
+			// Where the sand comes from: a little funnel in its color at the top
+			for (const { x, color: name } of state.spouts ?? []) {
+				const left = (x - (SPOUT_WIDTH >> 1)) * SCALE;
+				const right = left + SPOUT_WIDTH * SCALE;
+
+				pen.fillStyle = color(name);
+				pen.beginPath();
+				pen.moveTo(left - SCALE * 3, 0);
+				pen.lineTo(right + SCALE * 3, 0);
+				pen.lineTo(right, SCALE * 3);
+				pen.lineTo(left, SCALE * 3);
+				pen.closePath();
+				pen.fill();
+			}
+
+			if (state.wait > 0) {
+				pen.fillStyle = theme.colors.white.toHexString();
+				pen.font = `bold ${canvas.height / 4}px sans-serif`;
+				pen.textAlign = 'center';
+				pen.textBaseline = 'middle';
+				pen.fillText(String(Math.ceil(state.wait / STEPS_PER_SECOND)), canvas.width / 2, canvas.height / 2);
+			}
+
 			const counts = state.cups.map(cup => `${dots[cup.color] ?? '🪣'} ${Math.min(cup.count, cup.need)}/${cup.need}`).join('  ');
 
 			status.elem.textContent = `🏁 ${state.level + 1}   ${state.won ? '🎉' : counts}`;
@@ -232,9 +255,9 @@ export default class Play extends View {
 
 				if (message.update === 'state') state = { ...message.state, grains: unpack(message.sand) };
 				else if (message.update === 'sand') {
-					const { sand, cups, won } = message;
+					const { sand, cups, won, wait } = message;
 
-					state = { ...state, grains: unpack(sand), cups, won };
+					state = { ...state, grains: unpack(sand), cups, won, wait };
 				} else return;
 
 				redraw();

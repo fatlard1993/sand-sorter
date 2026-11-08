@@ -1,8 +1,9 @@
 export const WIDTH = 80;
 export const HEIGHT = 110;
 
-const SPOUT_WIDTH = 4;
+export const SPOUT_WIDTH = 4;
 export const SHADES = 4;
+export const STEPS_PER_SECOND = 60;
 
 const COLORS = ['yellow', 'blue', 'red', 'green', 'purple', 'orange', 'pink', 'teal'];
 
@@ -70,6 +71,8 @@ const inside = (x, y) => x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
 
 export const newRound = level => ({
 	level,
+	spouts: levels[level].spouts,
+	wait: 3 * STEPS_PER_SECOND,
 	walls: levels[level].walls ?? [],
 	paints: levels[level].paints ?? [],
 	lines: [],
@@ -138,8 +141,15 @@ export const step = (round, walls) => {
 
 	for (const [x, y] of round.grains) taken[index(x, y)] = 1;
 
+	// A count of three before any sand comes
+	if (round.wait > 0) {
+		round.wait--;
+
+		return round.wait % STEPS_PER_SECOND === 0;
+	}
+
 	// Each spout pours from a mouth a few grains wide, a grain or two at a time, so the stream has some spread
-	levels[round.level].spouts.forEach((spout, at) => {
+	round.spouts.forEach((spout, at) => {
 		for (let count = 0; count < 2; count++) {
 			const x = spout.x + Math.floor(Math.random() * SPOUT_WIDTH) - (SPOUT_WIDTH >> 1);
 

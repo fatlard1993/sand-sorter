@@ -1,9 +1,9 @@
 import { Game as BaseGame } from '@fatlard1993/web-game-framework';
 
-import { HEIGHT, WIDTH, buildWalls, levels, liftOutOfWalls, newRound, pack, step } from './sand.js';
+import { HEIGHT, STEPS_PER_SECOND, WIDTH, buildWalls, levels, liftOutOfWalls, newRound, pack, step } from './sand.js';
 
-const TICK_MS = 33;
 const STEPS_PER_TICK = 2;
+const TICK_MS = (1000 * STEPS_PER_TICK) / STEPS_PER_SECOND;
 
 // One running game, on the server. `state` is the round: its lines, its sand, its cups. The sand falls here, and every
 // page draws what it's sent (client/Play.js).
@@ -11,7 +11,7 @@ export default class Game extends BaseGame {
 	constructor(options) {
 		super(options);
 
-		this.state = options.saveState?.state?.walls ? options.saveState.state : newRound(0);
+		this.state = options.saveState?.state?.spouts ? options.saveState.state : newRound(0);
 		this.walls = buildWalls(this.state);
 
 		this.timer = setInterval(() => {
@@ -38,9 +38,9 @@ export default class Game extends BaseGame {
 
 		if (!changed) return;
 
-		const { grains, cups, won } = this.state;
+		const { grains, cups, won, wait } = this.state;
 
-		this.broadcast('sand', { sand: pack(grains), cups, won });
+		this.broadcast('sand', { sand: pack(grains), cups, won, wait });
 		this.save();
 	}
 
