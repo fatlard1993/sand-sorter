@@ -109,7 +109,7 @@ export const step = (round, walls) => {
 
 	round.grains.sort((a, b) => b[1] - a[1]);
 	const move = (grain, toX, toY) => {
-		taken[index(grain[0], grain[1])] = 0;
+		taken[index(grain[0], grain[1])] = walls[index(grain[0], grain[1])];
 		taken[index(toX, toY)] = 1;
 		grain[0] = toX;
 		grain[1] = toY;
@@ -121,8 +121,9 @@ export const step = (round, walls) => {
 		const [x, y] = grain;
 		const side = grain[3];
 
-		if (y + 1 >= HEIGHT) {
-			taken[index(x, y)] = 0;
+		// Under a line drawn on top of it, or off the bottom: gone
+		if (walls[index(x, y)] || y + 1 >= HEIGHT) {
+			taken[index(x, y)] = walls[index(x, y)];
 			changed = true;
 
 			return false;
