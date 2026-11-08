@@ -39,9 +39,9 @@ export default class Game extends BaseGame {
 
 		if (!changed) return;
 
-		const { grains, cups, won, wait, stars } = this.state;
+		const { grains, cups, won, spoiled, wait, stars } = this.state;
 
-		this.broadcast('sand', { sand: pack(grains), cups, won, wait, stars });
+		this.broadcast('sand', { sand: pack(grains), cups, won, spoiled, wait, stars });
 		this.save();
 	}
 

@@ -131,6 +131,7 @@ export const newRound = level => ({
 	poured: levels[level].spouts.map(() => 0),
 	cups: levels[level].cups.map(cup => ({ ...cup, count: 0 })),
 	won: false,
+	spoiled: false,
 });
 
 const stamp = (walls, x, y) => {
@@ -220,7 +221,7 @@ export const step = (round, walls) => {
 	}
 
 	// Each spout pours from a mouth a few grains wide, a grain or two at a time, so the stream has some spread
-	round.spouts.forEach((spout, at) => {
+	if (!round.spoiled) round.spouts.forEach((spout, at) => {
 		for (let count = 0; count < 2; count++) {
 			const x = spout.x + Math.floor(Math.random() * SPOUT_WIDTH) - (SPOUT_WIDTH >> 1);
 
@@ -287,7 +288,11 @@ export const step = (round, walls) => {
 	for (const cup of round.cups)
 		cup.count = round.grains.filter(([x, y, color]) => color === cup.color && inBox(cup, x, y)).length;
 
-	if (!round.won && round.cups.every(cup => cup.count >= cup.need)) {
+	// Sand of the wrong color in a cup spoils the round: the spouts stop, and it's time to try again
+	if (!round.won && round.grains.some(([x, y, color]) => round.cups.some(cup => color !== cup.color && inBox(cup, x, y))))
+		round.spoiled = true;
+
+	if (!round.won && !round.spoiled && round.cups.every(cup => cup.count >= cup.need)) {
 		round.won = true;
 		round.stars = round.ink <= round.par ? 3 : round.ink <= round.par * 2 ? 2 : 1;
 	}

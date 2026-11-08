@@ -193,6 +193,13 @@ export default class Play extends View {
 				pen.fill();
 			}
 
+			if (state.spoiled) {
+				pen.font = `${canvas.width / 4}px sans-serif`;
+				pen.textAlign = 'center';
+				pen.textBaseline = 'middle';
+				pen.fillText('😢', canvas.width / 2, canvas.height / 3);
+			}
+
 			if (state.won) {
 				pen.fillStyle = color('yellow');
 				pen.font = `${canvas.width / 6}px sans-serif`;
@@ -211,7 +218,7 @@ export default class Play extends View {
 
 			const counts = state.cups.map(cup => `${dots[cup.color] ?? '🪣'} ${Math.min(cup.count, cup.need)}/${cup.need}`).join('  ');
 
-			status.elem.textContent = `🏁 ${state.level + 1}   ${state.won ? '🎉' : counts}`;
+			status.elem.textContent = `🏁 ${state.level + 1}   ${state.won ? '🎉' : state.spoiled ? '❌ 🔄' : counts}`;
 			next.elem.style.display = state.won ? '' : 'none';
 		};
 
@@ -295,9 +302,9 @@ export default class Play extends View {
 
 				if (message.update === 'state') state = { ...message.state, grains: unpack(message.sand) };
 				else if (message.update === 'sand') {
-					const { sand, cups, won, wait, stars } = message;
+					const { sand, cups, won, spoiled, wait, stars } = message;
 
-					state = { ...state, grains: unpack(sand), cups, won, wait, stars };
+					state = { ...state, grains: unpack(sand), cups, won, spoiled, wait, stars };
 				} else return;
 
 				redraw();
