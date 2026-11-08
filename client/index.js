@@ -1,22 +1,16 @@
 import { Page, Router } from '@vanilla-bean/components';
-import { Create, Hub, Join } from '@fatlard1993/web-game-framework/ui';
 
 import '@fatlard1993/web-game-framework/client/socket';
 import '@vanilla-bean/components/app/reloadOnBuild';
 
+import Enter from './Enter.js';
+import Lobby from './Lobby.js';
 import Play from './Play.js';
 
-// The lobby is the framework's: a list of games to join, and a form to make one. Playing is this game's own.
-class GameHub extends Hub {
-	constructor(options, ...children) {
-		super({ watch: false, ...options }, ...children);
-	}
-}
-
+// No forms: the lobby makes a game or picks one with a tap, and a shared link goes straight in
 const views = {
-	'/hub': GameHub,
-	'/create': Create,
-	'/join/:gameId': Join,
+	'/hub': Lobby,
+	'/join/:gameId': Enter,
 	'/play/:gameId': Play,
 };
 

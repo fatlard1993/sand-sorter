@@ -34,8 +34,8 @@ const Buttons = styled(
 	Component,
 	({ space }) => `
 		display: flex;
-		gap: ${space.md};
-		font-size: 1.4em;
+		gap: ${space.lg};
+		font-size: 2.4em;
 	`,
 );
 
@@ -64,7 +64,7 @@ export default class Play extends View {
 		super(
 			{
 				...options,
-				toolbar: { heading: '', left: [new Link({ textContent: 'Leave', href: '#/hub', variant: 'button' })] },
+				toolbar: { heading: '', left: [new Link({ textContent: '🏠', href: '#/hub', variant: 'button' })] },
 			},
 			...children,
 		);
@@ -103,12 +103,12 @@ export default class Play extends View {
 		const buttons = new Buttons({ appendTo: board });
 
 		new Button({
-			textContent: '🔄 Again',
+			textContent: '🔄',
 			appendTo: buttons,
 			onPointerPress: () => socket.send({ gameId, playerId, type: 'restart' }),
 		});
 		const next = new Button({
-			textContent: '➡️ Next',
+			textContent: '➡️',
 			appendTo: buttons,
 			onPointerPress: () => socket.send({ gameId, playerId, type: 'next' }),
 		});
@@ -167,7 +167,7 @@ export default class Play extends View {
 
 			const counts = state.cups.map(cup => `${dots[cup.color] ?? '🪣'} ${Math.min(cup.count, cup.need)}/${cup.need}`).join('  ');
 
-			status.elem.textContent = `Level ${state.level + 1}   ${state.won ? '🎉 You did it!' : counts}`;
+			status.elem.textContent = `🏁 ${state.level + 1}   ${state.won ? '🎉' : counts}`;
 			next.elem.style.display = state.won ? '' : 'none';
 		};
 
