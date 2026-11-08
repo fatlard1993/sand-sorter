@@ -45,6 +45,8 @@ const Status = styled(
 	`,
 );
 
+const dots = { yellow: '🟡', blue: '🔵', red: '🔴', green: '🟢', purple: '🟣', orange: '🟠' };
+
 const color = name => theme.colors.light(theme.colors[name]).toHexString();
 
 // One player's screen: the sand box. The sand falls on the server; a line drawn here is sent there, and shows up on
@@ -157,9 +159,9 @@ export default class Play extends View {
 				pen.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
 			}
 
-			const cup = state.cups[0];
+			const counts = state.cups.map(cup => `${dots[cup.color] ?? '🪣'} ${Math.min(cup.count, cup.need)}/${cup.need}`).join('  ');
 
-			status.elem.textContent = `Level ${state.level + 1}   ${state.won ? '🎉 You did it!' : `🪣 ${cup.count} / ${cup.need}`}`;
+			status.elem.textContent = `Level ${state.level + 1}   ${state.won ? '🎉 You did it!' : counts}`;
 			next.elem.style.display = state.won ? '' : 'none';
 		};
 

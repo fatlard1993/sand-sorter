@@ -35,6 +35,16 @@ export const levels = [
 		paints: [{ x: 50, y: 40, width: 16, height: 10, color: 'blue' }],
 		cups: [{ x: 8, y: 90, width: 14, height: 16, color: 'blue', need: 100 }],
 	},
+	{
+		spouts: [
+			{ x: 30, color: 'yellow', amount: 250 },
+			{ x: 50, color: 'blue', amount: 250 },
+		],
+		cups: [
+			{ x: 4, y: 90, width: 14, height: 16, color: 'yellow', need: 90 },
+			{ x: 62, y: 90, width: 14, height: 16, color: 'blue', need: 90 },
+		],
+	},
 ];
 
 const index = (x, y) => y * WIDTH + x;
