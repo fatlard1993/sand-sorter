@@ -22,14 +22,17 @@ export const unpack = packed => {
 
 export const levels = [
 	{
+		par: 70,
 		spouts: [{ x: 12, color: 'yellow', amount: 300 }],
 		cups: [{ x: 56, y: 90, width: 16, height: 16, color: 'yellow', need: 120 }],
 	},
 	{
+		par: 75,
 		spouts: [{ x: 66, color: 'yellow', amount: 300 }],
 		cups: [{ x: 6, y: 88, width: 14, height: 18, color: 'yellow', need: 120 }],
 	},
 	{
+		par: 85,
 		spouts: [{ x: 40, color: 'yellow', amount: 300 }],
 		walls: [
 			[
@@ -40,6 +43,7 @@ export const levels = [
 		cups: [{ x: 34, y: 92, width: 12, height: 14, color: 'yellow', need: 100 }],
 	},
 	{
+		par: 90,
 		spouts: [{ x: 10, color: 'yellow', amount: 320 }],
 		walls: [
 			[
@@ -50,11 +54,13 @@ export const levels = [
 		cups: [{ x: 58, y: 90, width: 14, height: 16, color: 'yellow', need: 120 }],
 	},
 	{
+		par: 120,
 		spouts: [{ x: 12, color: 'yellow', amount: 320 }],
 		paints: [{ x: 50, y: 40, width: 16, height: 10, color: 'blue' }],
 		cups: [{ x: 8, y: 90, width: 14, height: 16, color: 'blue', need: 100 }],
 	},
 	{
+		par: 115,
 		spouts: [
 			{ x: 30, color: 'yellow', amount: 250 },
 			{ x: 50, color: 'blue', amount: 250 },
@@ -73,6 +79,9 @@ export const newRound = level => ({
 	level,
 	spouts: levels[level].spouts,
 	wait: 3 * STEPS_PER_SECOND,
+	par: levels[level].par,
+	ink: 0,
+	stars: 0,
 	walls: levels[level].walls ?? [],
 	paints: levels[level].paints ?? [],
 	lines: [],
@@ -111,6 +120,9 @@ export const buildWalls = round => {
 
 const inBox = ({ x, y, width, height }, grainX, grainY) =>
 	grainX > x && grainX < x + width && grainY > y && grainY < y + height;
+
+export const inkOf = line =>
+	line.reduce((total, [x, y], at) => (at ? total + Math.hypot(x - line[at - 1][0], y - line[at - 1][1]) : total), 0);
 
 // Sand a new line lands on is pushed up out of it, not lost
 export const liftOutOfWalls = (round, walls) => {
@@ -216,7 +228,10 @@ export const step = (round, walls) => {
 	for (const cup of round.cups)
 		cup.count = round.grains.filter(([x, y, color]) => color === cup.color && inBox(cup, x, y)).length;
 
-	round.won = round.cups.every(cup => cup.count >= cup.need);
+	if (!round.won && round.cups.every(cup => cup.count >= cup.need)) {
+		round.won = true;
+		round.stars = round.ink <= round.par ? 3 : round.ink <= round.par * 2 ? 2 : 1;
+	}
 
 	return changed;
 };

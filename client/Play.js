@@ -180,6 +180,14 @@ export default class Play extends View {
 				pen.fill();
 			}
 
+			if (state.won) {
+				pen.fillStyle = color('yellow');
+				pen.font = `${canvas.width / 6}px sans-serif`;
+				pen.textAlign = 'center';
+				pen.textBaseline = 'middle';
+				pen.fillText('⭐'.repeat(state.stars) + '☆'.repeat(3 - state.stars), canvas.width / 2, canvas.height / 3);
+			}
+
 			if (state.wait > 0) {
 				pen.fillStyle = theme.colors.white.toHexString();
 				pen.font = `bold ${canvas.height / 4}px sans-serif`;
@@ -255,9 +263,9 @@ export default class Play extends View {
 
 				if (message.update === 'state') state = { ...message.state, grains: unpack(message.sand) };
 				else if (message.update === 'sand') {
-					const { sand, cups, won, wait } = message;
+					const { sand, cups, won, wait, stars } = message;
 
-					state = { ...state, grains: unpack(sand), cups, won, wait };
+					state = { ...state, grains: unpack(sand), cups, won, wait, stars };
 				} else return;
 
 				redraw();

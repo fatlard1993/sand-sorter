@@ -1,6 +1,6 @@
 import { Game as BaseGame } from '@fatlard1993/web-game-framework';
 
-import { HEIGHT, STEPS_PER_SECOND, WIDTH, buildWalls, levels, liftOutOfWalls, newRound, pack, step } from './sand.js';
+import { HEIGHT, STEPS_PER_SECOND, WIDTH, buildWalls, inkOf, levels, liftOutOfWalls, newRound, pack, step } from './sand.js';
 
 const STEPS_PER_TICK = 2;
 const TICK_MS = (1000 * STEPS_PER_TICK) / STEPS_PER_SECOND;
@@ -11,7 +11,7 @@ export default class Game extends BaseGame {
 	constructor(options) {
 		super(options);
 
-		this.state = options.saveState?.state?.spouts ? options.saveState.state : newRound(0);
+		this.state = options.saveState?.state?.par ? options.saveState.state : newRound(0);
 		this.walls = buildWalls(this.state);
 
 		this.timer = setInterval(() => {
@@ -38,9 +38,9 @@ export default class Game extends BaseGame {
 
 		if (!changed) return;
 
-		const { grains, cups, won, wait } = this.state;
+		const { grains, cups, won, wait, stars } = this.state;
 
-		this.broadcast('sand', { sand: pack(grains), cups, won, wait });
+		this.broadcast('sand', { sand: pack(grains), cups, won, wait, stars });
 		this.save();
 	}
 
@@ -65,7 +65,10 @@ export default class Game extends BaseGame {
 		if (type === 'line' && Array.isArray(line) && line.length > 0 && line.length < 500) {
 			const clamp = (value, max) => Math.max(0, Math.min(max - 1, Math.round(Number(value) || 0)));
 
-			this.state.lines.push(line.map(([x, y]) => [clamp(x, WIDTH), clamp(y, HEIGHT)]));
+			const piece = line.map(([x, y]) => [clamp(x, WIDTH), clamp(y, HEIGHT)]);
+
+			this.state.lines.push(piece);
+			this.state.ink += inkOf(piece);
 		}
 
 		if (type === 'restart') this.state = newRound(this.state.level);
