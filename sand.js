@@ -109,6 +109,28 @@ export const buildWalls = round => {
 const inBox = ({ x, y, width, height }, grainX, grainY) =>
 	grainX > x && grainX < x + width && grainY > y && grainY < y + height;
 
+// Sand a new line lands on is pushed up out of it, not lost
+export const liftOutOfWalls = (round, walls) => {
+	const taken = new Uint8Array(walls);
+
+	for (const [x, y] of round.grains) if (!walls[index(x, y)]) taken[index(x, y)] = 1;
+
+	round.grains = round.grains.filter(grain => {
+		if (!walls[index(grain[0], grain[1])]) return true;
+
+		for (let y = grain[1] - 1; y >= 0; y--) {
+			if (taken[index(grain[0], y)]) continue;
+
+			grain[1] = y;
+			taken[index(grain[0], y)] = 1;
+
+			return true;
+		}
+
+		return false;
+	});
+};
+
 // One step of falling sand; says whether anything changed
 export const step = (round, walls) => {
 	const taken = new Uint8Array(walls);

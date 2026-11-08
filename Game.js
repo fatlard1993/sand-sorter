@@ -1,6 +1,6 @@
 import { Game as BaseGame } from '@fatlard1993/web-game-framework';
 
-import { HEIGHT, WIDTH, buildWalls, levels, newRound, pack, step } from './sand.js';
+import { HEIGHT, WIDTH, buildWalls, levels, liftOutOfWalls, newRound, pack, step } from './sand.js';
 
 const TICK_MS = 33;
 const STEPS_PER_TICK = 2;
@@ -53,7 +53,9 @@ export default class Game extends BaseGame {
 	}
 
 	announce() {
-		this.broadcast('state', { state: this.state, players: [...this.players.values()] });
+		const { grains, ...state } = this.state;
+
+		this.broadcast('state', { state, sand: pack(grains), players: [...this.players.values()] });
 	}
 
 	// Something a player did, from their page: { gameId, playerId, type, ...whatever the type carries }
@@ -71,6 +73,7 @@ export default class Game extends BaseGame {
 		if (type === 'next' && this.state.won) this.state = newRound((this.state.level + 1) % levels.length);
 
 		this.walls = buildWalls(this.state);
+		liftOutOfWalls(this.state, this.walls);
 		this.announce();
 	}
 

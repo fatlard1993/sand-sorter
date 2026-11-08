@@ -180,8 +180,19 @@ export default class Play extends View {
 		canvas.addEventListener('pointerdown', event => {
 			canvas.setPointerCapture(event.pointerId);
 			drawing = [toGrid(event)];
-			draw();
+			sentAt = Date.now();
+			redraw();
 		});
+		// The line goes to the server a piece at a time as it's drawn, so it catches sand before the finger lifts
+		let sentAt = 0;
+		const sendPiece = () => {
+			if (!drawing || drawing.length < 2) return;
+
+			socket.send({ gameId, playerId, type: 'line', line: drawing });
+			drawing = [drawing.at(-1)];
+			sentAt = Date.now();
+		};
+
 		canvas.addEventListener('pointermove', event => {
 			if (!drawing) return;
 
@@ -189,13 +200,16 @@ export default class Play extends View {
 			const last = drawing.at(-1);
 
 			if (point[0] !== last[0] || point[1] !== last[1]) drawing.push(point);
-			draw();
+			if (Date.now() - sentAt > 80) sendPiece();
+			redraw();
 		});
 		const finish = () => {
 			if (!drawing) return;
 
-			socket.send({ gameId, playerId, type: 'line', line: drawing });
+			if (drawing.length === 1) socket.send({ gameId, playerId, type: 'line', line: drawing });
+			else sendPiece();
 			drawing = null;
+			redraw();
 		};
 
 		canvas.addEventListener('pointerup', finish);
@@ -216,7 +230,7 @@ export default class Play extends View {
 			onMessage(message => {
 				if (message.gameId !== gameId) return;
 
-				if (message.update === 'state') state = message.state;
+				if (message.update === 'state') state = { ...message.state, grains: unpack(message.sand) };
 				else if (message.update === 'sand') {
 					const { sand, cups, won } = message;
 
