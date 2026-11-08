@@ -152,6 +152,18 @@ export default class Play extends View {
 				pen.fillRect(x * SCALE, y * SCALE, paintWidth * SCALE, paintHeight * SCALE);
 			}
 
+			// Wind: a pale band with arrows the way it blows
+			for (const { x, y, width: windWidth, height: windHeight, blow } of state.winds ?? []) {
+				pen.fillStyle = theme.colors.alpha(theme.colors.teal, 0.18).toRgbString();
+				pen.fillRect(x * SCALE, y * SCALE, windWidth * SCALE, windHeight * SCALE);
+				pen.fillStyle = theme.colors.alpha(theme.colors.white, 0.5).toRgbString();
+				pen.font = `${windHeight * SCALE * 0.6}px sans-serif`;
+				pen.textAlign = 'center';
+				pen.textBaseline = 'middle';
+				for (let at = x + 8; at < x + windWidth; at += 16)
+					pen.fillText(blow > 0 ? '→' : '←', at * SCALE, (y + windHeight / 2) * SCALE);
+			}
+
 			for (const cup of state.cups) {
 				const { x, y, width: cupWidth, height: cupHeight } = cup;
 				const fill = Math.min(1, cup.count / cup.need);

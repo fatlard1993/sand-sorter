@@ -112,6 +112,32 @@ export const levels = [
 			{ x: 46, y: 90, width: 14, height: 16, color: 'red', need: 90 },
 		],
 	},
+	{
+		par: 40,
+		spouts: [{ x: 12, color: 'yellow', amount: 350 }],
+		winds: [{ x: 0, y: 30, width: 80, height: 14, blow: 1 }],
+		walls: [
+			[
+				[50, 60],
+				[50, 105],
+			],
+		],
+		cups: [
+			{ x: 60, y: 90, width: 14, height: 16, color: 'yellow', need: 100 },
+		],
+	},
+	{
+		par: 90,
+		spouts: [
+			{ x: 20, color: 'yellow', amount: 300 },
+			{ x: 60, color: 'blue', amount: 300 },
+		],
+		winds: [{ x: 0, y: 55, width: 80, height: 12, blow: -1 }],
+		cups: [
+			{ x: 14, y: 90, width: 14, height: 16, color: 'yellow', need: 90 },
+			{ x: 54, y: 90, width: 14, height: 16, color: 'blue', need: 90 },
+		],
+	},
 ];
 
 const index = (x, y) => y * WIDTH + x;
@@ -126,6 +152,7 @@ export const newRound = level => ({
 	stars: 0,
 	walls: levels[level].walls ?? [],
 	paints: levels[level].paints ?? [],
+	winds: levels[level].winds ?? [],
 	lines: [],
 	grains: [],
 	poured: levels[level].spouts.map(() => 0),
@@ -257,6 +284,20 @@ export const step = (round, walls) => {
 		}
 
 		if (Math.random() < 0.08) return true;
+
+		// In the wind, sand is blown sideways more often than it falls
+		const wind = round.winds?.find(box => inBox(box, x, y));
+
+		if (wind && Math.random() < 0.7) {
+			const toX = x + wind.blow;
+
+			grain[3] = wind.blow;
+			if (toX >= 0 && toX < WIDTH && !taken[index(toX, y)]) {
+				move(grain, toX, y);
+
+				return true;
+			}
+		}
 
 		for (const [dx, dy] of [
 			[0, 1],
