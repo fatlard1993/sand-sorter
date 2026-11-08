@@ -6,6 +6,30 @@ export const levels = [
 		spouts: [{ x: 12, color: 'yellow', amount: 300 }],
 		cups: [{ x: 56, y: 90, width: 16, height: 16, color: 'yellow', need: 120 }],
 	},
+	{
+		spouts: [{ x: 66, color: 'yellow', amount: 300 }],
+		cups: [{ x: 6, y: 88, width: 14, height: 18, color: 'yellow', need: 120 }],
+	},
+	{
+		spouts: [{ x: 40, color: 'yellow', amount: 300 }],
+		walls: [
+			[
+				[28, 40],
+				[52, 40],
+			],
+		],
+		cups: [{ x: 34, y: 92, width: 12, height: 14, color: 'yellow', need: 100 }],
+	},
+	{
+		spouts: [{ x: 10, color: 'yellow', amount: 320 }],
+		walls: [
+			[
+				[40, 30],
+				[40, 100],
+			],
+		],
+		cups: [{ x: 58, y: 90, width: 14, height: 16, color: 'yellow', need: 120 }],
+	},
 ];
 
 const index = (x, y) => y * WIDTH + x;
@@ -13,6 +37,7 @@ const inside = (x, y) => x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
 
 export const newRound = level => ({
 	level,
+	walls: levels[level].walls ?? [],
 	lines: [],
 	grains: [],
 	poured: levels[level].spouts.map(() => 0),
@@ -41,7 +66,8 @@ export const buildWalls = round => {
 		drawSegment(walls, [x, y + height], [x + width, y + height]);
 	}
 
-	for (const line of round.lines) for (let at = 1; at < line.length; at++) drawSegment(walls, line[at - 1], line[at]);
+	for (const line of [...round.walls, ...round.lines])
+		for (let at = 1; at < line.length; at++) drawSegment(walls, line[at - 1], line[at]);
 
 	return walls;
 };

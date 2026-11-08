@@ -1,6 +1,6 @@
 import { Game as BaseGame } from '@fatlard1993/web-game-framework';
 
-import { HEIGHT, WIDTH, buildWalls, newRound, step } from './sand.js';
+import { HEIGHT, WIDTH, buildWalls, levels, newRound, step } from './sand.js';
 
 const TICK_MS = 50;
 
@@ -13,7 +13,7 @@ export default class Game extends BaseGame {
 	constructor(options) {
 		super(options);
 
-		this.state = options.saveState?.state?.cups ? options.saveState.state : newRound(0);
+		this.state = options.saveState?.state?.walls ? options.saveState.state : newRound(0);
 		this.walls = buildWalls(this.state);
 
 		clearInterval(globalThis.sandTimers[this.id]);
@@ -58,6 +58,8 @@ export default class Game extends BaseGame {
 		}
 
 		if (type === 'restart') this.state = newRound(this.state.level);
+
+		if (type === 'next' && this.state.won) this.state = newRound((this.state.level + 1) % levels.length);
 
 		this.walls = buildWalls(this.state);
 		this.announce();

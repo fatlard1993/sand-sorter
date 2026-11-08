@@ -28,6 +28,15 @@ const Box = styled(
 	`,
 );
 
+const Buttons = styled(
+	Component,
+	({ space }) => `
+		display: flex;
+		gap: ${space.md};
+		font-size: 1.4em;
+	`,
+);
+
 const Status = styled(
 	Component,
 	() => `
@@ -83,10 +92,17 @@ export default class Play extends View {
 		canvas.width = width * SCALE;
 		canvas.height = height * SCALE;
 
+		const buttons = new Buttons({ appendTo: board });
+
 		new Button({
 			textContent: '🔄 Again',
-			appendTo: board,
+			appendTo: buttons,
 			onPointerPress: () => socket.send({ gameId, playerId, type: 'restart' }),
+		});
+		const next = new Button({
+			textContent: '➡️ Next',
+			appendTo: buttons,
+			onPointerPress: () => socket.send({ gameId, playerId, type: 'next' }),
 		});
 
 		let state = game.state;
@@ -127,6 +143,7 @@ export default class Play extends View {
 				);
 			}
 
+			for (const wall of state.walls ?? []) strokeLine(wall.map(([x, y]) => [x + 0.5, y + 0.5]), color('gray'));
 			for (const line of state.lines) strokeLine(line.map(([x, y]) => [x + 0.5, y + 0.5]), theme.colors.white.toHexString());
 			if (drawing) strokeLine(drawing, theme.colors.alpha(theme.colors.white, 0.6).toRgbString());
 
@@ -137,7 +154,8 @@ export default class Play extends View {
 
 			const cup = state.cups[0];
 
-			status.elem.textContent = state.won ? '🎉 You did it!' : `🪣 ${cup.count} / ${cup.need}`;
+			status.elem.textContent = `Level ${state.level + 1}   ${state.won ? '🎉 You did it!' : `🪣 ${cup.count} / ${cup.need}`}`;
+			next.elem.style.display = state.won ? '' : 'none';
 		};
 
 		const toGrid = ({ clientX, clientY }) => {
