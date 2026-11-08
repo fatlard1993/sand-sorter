@@ -3,6 +3,7 @@ import { gameContext, getGame, onMessage, socket } from '@fatlard1993/web-game-f
 import { View } from '@fatlard1993/web-game-framework/ui';
 
 import { SPOUT_WIDTH, STEPS_PER_SECOND, unpack } from '../sand.js';
+import { sounds } from './sounds.js';
 
 const SCALE = 6;
 
@@ -285,6 +286,21 @@ export default class Play extends View {
 		canvas.addEventListener('pointerup', finish);
 		canvas.addEventListener('pointercancel', finish);
 
+		let plopAt = 0;
+		const inCups = ({ cups }) => cups.reduce((total, { count }) => total + count, 0);
+		const playSounds = (before, after) => {
+			const secondsBefore = Math.ceil((before.wait ?? 0) / STEPS_PER_SECOND);
+			const secondsAfter = Math.ceil(after.wait / STEPS_PER_SECOND);
+
+			if (secondsAfter !== secondsBefore) secondsAfter ? sounds.count() : sounds.go();
+			if (after.won && !before.won) sounds.win();
+			if (after.spoiled && !before.spoiled) sounds.spoil();
+			if (inCups(after) > inCups(before) && Date.now() - plopAt > 90) {
+				plopAt = Date.now();
+				sounds.plop();
+			}
+		};
+
 		let frame;
 		const redraw = () => {
 			frame ??= requestAnimationFrame(() => {
@@ -300,10 +316,14 @@ export default class Play extends View {
 			onMessage(message => {
 				if (message.gameId !== gameId) return;
 
-				if (message.update === 'state') state = { ...message.state, grains: unpack(message.sand) };
+				if (message.update === 'state') {
+					if (message.state.wait > 0 && !(state.wait > 0)) sounds.count();
+					state = { ...message.state, grains: unpack(message.sand) };
+				}
 				else if (message.update === 'sand') {
 					const { sand, cups, won, spoiled, wait, stars } = message;
 
+					playSounds(state, message);
 					state = { ...state, grains: unpack(sand), cups, won, spoiled, wait, stars };
 				} else return;
 
