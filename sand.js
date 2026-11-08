@@ -112,7 +112,7 @@ export const buildWalls = round => {
 		drawSegment(walls, [x, y + height], [x + width, y + height]);
 	}
 
-	for (const line of [...round.walls, ...round.lines])
+	for (const line of [...round.walls, ...round.lines.map(({ points }) => points)])
 		for (let at = 1; at < line.length; at++) drawSegment(walls, line[at - 1], line[at]);
 
 	return walls;
@@ -123,6 +123,23 @@ const inBox = ({ x, y, width, height }, grainX, grainY) =>
 
 export const inkOf = line =>
 	line.reduce((total, [x, y], at) => (at ? total + Math.hypot(x - line[at - 1][0], y - line[at - 1][1]) : total), 0);
+
+const distanceToSegment = ([px, py], [x1, y1], [x2, y2]) => {
+	const length = (x2 - x1) ** 2 + (y2 - y1) ** 2;
+	const along = length ? Math.max(0, Math.min(1, ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / length)) : 0;
+
+	return Math.hypot(px - (x1 + along * (x2 - x1)), py - (y1 + along * (y2 - y1)));
+};
+
+// The strokes with a piece passing within reach of a point
+export const linesNear = (lines, point, reach) =>
+	new Set(
+		lines
+			.filter(({ points }) =>
+				points.some((at, index) => distanceToSegment(point, points[Math.max(0, index - 1)], at) <= reach),
+			)
+			.map(({ stroke }) => stroke),
+	);
 
 // Sand a new line lands on is pushed up out of it, not lost
 export const liftOutOfWalls = (round, walls) => {

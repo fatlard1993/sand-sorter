@@ -115,6 +115,18 @@ export default class Play extends View {
 
 		let state = game.state;
 		let drawing = null;
+		let stroke;
+		let tool = 'pen';
+
+		const penButton = new Button({ textContent: '✏️', appendTo: buttons, onPointerPress: () => pick('pen') });
+		const spongeButton = new Button({ textContent: '🧽', appendTo: buttons, onPointerPress: () => pick('sponge') });
+		const pick = chosen => {
+			tool = chosen;
+			penButton.elem.style.opacity = tool === 'pen' ? '' : '0.4';
+			spongeButton.elem.style.opacity = tool === 'sponge' ? '' : '0.4';
+		};
+
+		pick('pen');
 
 		const strokeLine = (points, style) => {
 			if (!points.length) return;
@@ -157,7 +169,8 @@ export default class Play extends View {
 			}
 
 			for (const wall of state.walls ?? []) strokeLine(wall.map(([x, y]) => [x + 0.5, y + 0.5]), color('gray'));
-			for (const line of state.lines) strokeLine(line.map(([x, y]) => [x + 0.5, y + 0.5]), theme.colors.white.toHexString());
+			for (const { points } of state.lines)
+				strokeLine(points.map(([x, y]) => [x + 0.5, y + 0.5]), theme.colors.white.toHexString());
 			if (drawing) strokeLine(drawing, theme.colors.alpha(theme.colors.white, 0.6).toRgbString());
 
 			for (const [x, y, name, , shade] of state.grains) {
@@ -208,8 +221,20 @@ export default class Play extends View {
 			return [Math.round(((clientX - rect.left) / rect.width) * width), Math.round(((clientY - rect.top) / rect.height) * height)];
 		};
 
+		let erasing = false;
+		const erase = event => socket.send({ gameId, playerId, type: 'erase', at: toGrid(event) });
+
 		canvas.addEventListener('pointerdown', event => {
 			canvas.setPointerCapture(event.pointerId);
+
+			if (tool === 'sponge') {
+				erasing = true;
+				erase(event);
+
+				return;
+			}
+
+			stroke = `${playerId}${Date.now()}`;
 			drawing = [toGrid(event)];
 			sentAt = Date.now();
 			redraw();
@@ -219,12 +244,17 @@ export default class Play extends View {
 		const sendPiece = () => {
 			if (!drawing || drawing.length < 2) return;
 
-			socket.send({ gameId, playerId, type: 'line', line: drawing });
+			socket.send({ gameId, playerId, type: 'line', line: drawing, stroke });
 			drawing = [drawing.at(-1)];
 			sentAt = Date.now();
 		};
 
 		canvas.addEventListener('pointermove', event => {
+			if (erasing && Date.now() - sentAt > 50) {
+				erase(event);
+				sentAt = Date.now();
+			}
+
 			if (!drawing) return;
 
 			const point = toGrid(event);
@@ -235,9 +265,11 @@ export default class Play extends View {
 			redraw();
 		});
 		const finish = () => {
+			erasing = false;
+
 			if (!drawing) return;
 
-			if (drawing.length === 1) socket.send({ gameId, playerId, type: 'line', line: drawing });
+			if (drawing.length === 1) socket.send({ gameId, playerId, type: 'line', line: drawing, stroke });
 			else sendPiece();
 			drawing = null;
 			redraw();

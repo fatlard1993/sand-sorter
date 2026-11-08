@@ -1,8 +1,9 @@
 import { Game as BaseGame } from '@fatlard1993/web-game-framework';
 
-import { HEIGHT, STEPS_PER_SECOND, WIDTH, buildWalls, inkOf, levels, liftOutOfWalls, newRound, pack, step } from './sand.js';
+import { HEIGHT, STEPS_PER_SECOND, WIDTH, buildWalls, inkOf, levels, liftOutOfWalls, linesNear, newRound, pack, step } from './sand.js';
 
 const STEPS_PER_TICK = 2;
+const ERASE_REACH = 3;
 const TICK_MS = (1000 * STEPS_PER_TICK) / STEPS_PER_SECOND;
 
 // One running game, on the server. `state` is the round: its lines, its sand, its cups. The sand falls here, and every
@@ -11,7 +12,7 @@ export default class Game extends BaseGame {
 	constructor(options) {
 		super(options);
 
-		this.state = options.saveState?.state?.par ? options.saveState.state : newRound(0);
+		this.state = options.saveState?.state?.lines?.every(line => line.points) ? options.saveState.state : newRound(0);
 		this.walls = buildWalls(this.state);
 
 		this.timer = setInterval(() => {
@@ -25,7 +26,7 @@ export default class Game extends BaseGame {
 	}
 
 	tick() {
-		// Deleted, or replaced by a fresh copy from the save file (`bun --hot` makes one on every change)
+		// Deleted
 		if (this.server?.games[this.id] !== this) {
 			clearInterval(this.timer);
 
@@ -59,16 +60,25 @@ export default class Game extends BaseGame {
 	}
 
 	// Something a player did, from their page: { gameId, playerId, type, ...whatever the type carries }
-	receive({ type, playerId, line }) {
+	receive({ type, playerId, line, stroke, at }) {
 		if (!this.players.has(playerId)) return;
 
+		const clamp = (value, max) => Math.max(0, Math.min(max - 1, Math.round(Number(value) || 0)));
+
+		// A line arrives a piece at a time; its pieces share the stroke they were drawn in, so they erase together
 		if (type === 'line' && Array.isArray(line) && line.length > 0 && line.length < 500) {
-			const clamp = (value, max) => Math.max(0, Math.min(max - 1, Math.round(Number(value) || 0)));
+			const points = line.map(([x, y]) => [clamp(x, WIDTH), clamp(y, HEIGHT)]);
 
-			const piece = line.map(([x, y]) => [clamp(x, WIDTH), clamp(y, HEIGHT)]);
+			this.state.lines.push({ stroke: String(stroke ?? Math.random()), points });
+			this.state.ink += inkOf(points);
+		}
 
-			this.state.lines.push(piece);
-			this.state.ink += inkOf(piece);
+		if (type === 'erase' && Array.isArray(at)) {
+			const touched = linesNear(this.state.lines, [clamp(at[0], WIDTH), clamp(at[1], HEIGHT)], ERASE_REACH);
+
+			if (!touched.size) return;
+
+			this.state.lines = this.state.lines.filter(({ stroke: id }) => !touched.has(id));
 		}
 
 		if (type === 'restart') this.state = newRound(this.state.level);
