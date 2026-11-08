@@ -1,6 +1,21 @@
 export const WIDTH = 80;
 export const HEIGHT = 110;
 
+const COLORS = ['yellow', 'blue', 'red', 'green', 'purple', 'orange', 'pink', 'teal'];
+
+// Sand as three bytes a grain (x, y, color), so a whole box of it is a short message
+export const pack = grains =>
+	btoa(String.fromCharCode(...grains.flatMap(([x, y, color]) => [x, y, COLORS.indexOf(color)])));
+
+export const unpack = packed => {
+	const bytes = Uint8Array.from(atob(packed), character => character.charCodeAt(0));
+	const grains = [];
+
+	for (let at = 0; at < bytes.length; at += 3) grains.push([bytes[at], bytes[at + 1], COLORS[bytes[at + 2]]]);
+
+	return grains;
+};
+
 export const levels = [
 	{
 		spouts: [{ x: 12, color: 'yellow', amount: 300 }],

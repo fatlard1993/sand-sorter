@@ -1,8 +1,9 @@
 import { Game as BaseGame } from '@fatlard1993/web-game-framework';
 
-import { HEIGHT, WIDTH, buildWalls, levels, newRound, step } from './sand.js';
+import { HEIGHT, WIDTH, buildWalls, levels, newRound, pack, step } from './sand.js';
 
-const TICK_MS = 50;
+const TICK_MS = 33;
+const STEPS_PER_TICK = 2;
 
 // `bun --hot` makes new games from the save file on every change; one timer per game id keeps the old ones from ticking
 globalThis.sandTimers ??= {};
@@ -27,11 +28,17 @@ export default class Game extends BaseGame {
 			return;
 		}
 
-		if (!this.players.size || !step(this.state, this.walls)) return;
+		if (!this.players.size) return;
+
+		let changed = false;
+
+		for (let count = 0; count < STEPS_PER_TICK; count++) changed = step(this.state, this.walls) || changed;
+
+		if (!changed) return;
 
 		const { grains, cups, won } = this.state;
 
-		this.broadcast('sand', { grains, cups, won });
+		this.broadcast('sand', { sand: pack(grains), cups, won });
 		this.save();
 	}
 

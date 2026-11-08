@@ -2,6 +2,8 @@ import { Button, Component, Link, styled, theme } from '@vanilla-bean/components
 import { gameContext, getGame, onMessage, socket } from '@fatlard1993/web-game-framework/client';
 import { View } from '@fatlard1993/web-game-framework/ui';
 
+import { unpack } from '../sand.js';
+
 const SCALE = 6;
 
 const Board = styled(
@@ -47,7 +49,8 @@ const Status = styled(
 
 const dots = { yellow: '🟡', blue: '🔵', red: '🔴', green: '🟢', purple: '🟣', orange: '🟠' };
 
-const color = name => theme.colors.light(theme.colors[name]).toHexString();
+const colorCache = {};
+const color = name => (colorCache[name] ??= theme.colors.light(theme.colors[name]).toHexString());
 
 // One player's screen: the sand box. The sand falls on the server; a line drawn here is sent there, and shows up on
 // every screen once it comes back.
@@ -195,17 +198,29 @@ export default class Play extends View {
 		canvas.addEventListener('pointerup', finish);
 		canvas.addEventListener('pointercancel', finish);
 
+		let frame;
+		const redraw = () => {
+			frame ??= requestAnimationFrame(() => {
+				frame = undefined;
+				draw();
+			});
+		};
+
 		draw();
+		this.addCleanup('frame', () => cancelAnimationFrame(frame));
 		this.addCleanup(
 			'socket',
 			onMessage(message => {
 				if (message.gameId !== gameId) return;
 
 				if (message.update === 'state') state = message.state;
-				else if (message.update === 'sand') state = { ...state, ...message };
-				else return;
+				else if (message.update === 'sand') {
+					const { sand, cups, won } = message;
 
-				draw();
+					state = { ...state, grains: unpack(sand), cups, won };
+				} else return;
+
+				redraw();
 			}),
 		);
 	}
