@@ -4,6 +4,7 @@ export const HEIGHT = 110;
 export const SPOUT_WIDTH = 4;
 export const SHADES = 4;
 export const STEPS_PER_SECOND = 60;
+const STILL_STEPS = 3 * STEPS_PER_SECOND;
 
 const COLORS = ['yellow', 'blue', 'red', 'green', 'purple', 'orange', 'pink', 'teal'];
 
@@ -402,10 +403,13 @@ export const step = (round, walls) => {
 		round.stars = round.ink <= round.par ? 3 : round.ink <= round.par * 2 ? 2 : 1;
 	}
 
-	// Every spout empty and the sand gone still, without the cups full: the round is over
+	// Every spout empty and the sand still for a few seconds, without the cups full: the round is over. Sand pauses now
+	// and then on its own, and a line drawn or rubbed out can set it going again, so one quiet step is not enough.
 	const pouredAll = round.spouts.every((spout, at) => round.poured[at] >= spout.amount);
 
-	if (!changed && pouredAll && !round.won && !round.spoiled) {
+	round.still = changed || !pouredAll ? 0 : (round.still ?? 0) + 1;
+
+	if (round.still > STILL_STEPS && !round.won && !round.spoiled) {
 		round.spoiled = true;
 		changed = true;
 	}
