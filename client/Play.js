@@ -51,6 +51,9 @@ const dots = { yellow: '🟡', blue: '🔵', red: '🔴', green: '🟢', purple:
 
 const colorCache = {};
 const color = name => (colorCache[name] ??= theme.colors.light(theme.colors[name]).toHexString());
+const shades = [-8, -3, 2, 7];
+const sandColor = (name, shade = 0) =>
+	(colorCache[`${name}${shade}`] ??= theme.colors.light(theme.colors[name]).lighten(shades[shade]).toHexString());
 
 // One player's screen: the sand box. The sand falls on the server; a line drawn here is sent there, and shows up on
 // every screen once it comes back.
@@ -157,8 +160,8 @@ export default class Play extends View {
 			for (const line of state.lines) strokeLine(line.map(([x, y]) => [x + 0.5, y + 0.5]), theme.colors.white.toHexString());
 			if (drawing) strokeLine(drawing, theme.colors.alpha(theme.colors.white, 0.6).toRgbString());
 
-			for (const [x, y, name] of state.grains) {
-				pen.fillStyle = color(name);
+			for (const [x, y, name, , shade] of state.grains) {
+				pen.fillStyle = sandColor(name, shade);
 				pen.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
 			}
 

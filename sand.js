@@ -1,17 +1,20 @@
 export const WIDTH = 80;
 export const HEIGHT = 110;
 
+const SPOUT_WIDTH = 4;
+export const SHADES = 4;
+
 const COLORS = ['yellow', 'blue', 'red', 'green', 'purple', 'orange', 'pink', 'teal'];
 
 // Sand as three bytes a grain (x, y, color), so a whole box of it is a short message
 export const pack = grains =>
-	btoa(String.fromCharCode(...grains.flatMap(([x, y, color]) => [x, y, COLORS.indexOf(color)])));
+	btoa(String.fromCharCode(...grains.flatMap(([x, y, color, , shade = 0]) => [x, y, COLORS.indexOf(color) * SHADES + shade])));
 
 export const unpack = packed => {
 	const bytes = Uint8Array.from(atob(packed), character => character.charCodeAt(0));
 	const grains = [];
 
-	for (let at = 0; at < bytes.length; at += 3) grains.push([bytes[at], bytes[at + 1], COLORS[bytes[at + 2]]]);
+	for (let at = 0; at < bytes.length; at += 3) grains.push([bytes[at], bytes[at + 1], COLORS[Math.floor(bytes[at + 2] / SHADES)], 0, bytes[at + 2] % SHADES]);
 
 	return grains;
 };
@@ -113,13 +116,18 @@ export const step = (round, walls) => {
 
 	for (const [x, y] of round.grains) taken[index(x, y)] = 1;
 
+	// Each spout pours from a mouth a few grains wide, a grain or two at a time, so the stream has some spread
 	levels[round.level].spouts.forEach((spout, at) => {
-		if (round.poured[at] >= spout.amount || taken[index(spout.x, 0)]) return;
+		for (let count = 0; count < 2; count++) {
+			const x = spout.x + Math.floor(Math.random() * SPOUT_WIDTH) - (SPOUT_WIDTH >> 1);
 
-		round.grains.push([spout.x, 0, spout.color, Math.random() < 0.5 ? -1 : 1]);
-		taken[index(spout.x, 0)] = 1;
-		round.poured[at]++;
-		changed = true;
+			if (round.poured[at] >= spout.amount || taken[index(x, 0)] || Math.random() < 0.4) continue;
+
+			round.grains.push([x, 0, spout.color, Math.random() < 0.5 ? -1 : 1, Math.floor(Math.random() * SHADES)]);
+			taken[index(x, 0)] = 1;
+			round.poured[at]++;
+			changed = true;
+		}
 	});
 
 	round.grains.sort((a, b) => b[1] - a[1]);
@@ -143,6 +151,8 @@ export const step = (round, walls) => {
 
 			return false;
 		}
+
+		if (Math.random() < 0.08) return true;
 
 		for (const [dx, dy] of [
 			[0, 1],
