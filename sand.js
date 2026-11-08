@@ -30,6 +30,11 @@ export const levels = [
 		],
 		cups: [{ x: 58, y: 90, width: 14, height: 16, color: 'yellow', need: 120 }],
 	},
+	{
+		spouts: [{ x: 12, color: 'yellow', amount: 320 }],
+		paints: [{ x: 50, y: 40, width: 16, height: 10, color: 'blue' }],
+		cups: [{ x: 8, y: 90, width: 14, height: 16, color: 'blue', need: 100 }],
+	},
 ];
 
 const index = (x, y) => y * WIDTH + x;
@@ -38,6 +43,7 @@ const inside = (x, y) => x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
 export const newRound = level => ({
 	level,
 	walls: levels[level].walls ?? [],
+	paints: levels[level].paints ?? [],
 	lines: [],
 	grains: [],
 	poured: levels[level].spouts.map(() => 0),
@@ -72,7 +78,7 @@ export const buildWalls = round => {
 	return walls;
 };
 
-const inCup = ({ x, y, width, height }, grainX, grainY) =>
+const inBox = ({ x, y, width, height }, grainX, grainY) =>
 	grainX > x && grainX < x + width && grainY > y && grainY < y + height;
 
 // One step of falling sand; says whether anything changed
@@ -136,8 +142,11 @@ export const step = (round, walls) => {
 		return true;
 	});
 
+	for (const grain of round.grains)
+		for (const paint of round.paints ?? []) if (inBox(paint, grain[0], grain[1])) grain[2] = paint.color;
+
 	for (const cup of round.cups)
-		cup.count = round.grains.filter(([x, y, color]) => color === cup.color && inCup(cup, x, y)).length;
+		cup.count = round.grains.filter(([x, y, color]) => color === cup.color && inBox(cup, x, y)).length;
 
 	round.won = round.cups.every(cup => cup.count >= cup.need);
 

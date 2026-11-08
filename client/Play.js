@@ -126,6 +126,11 @@ export default class Play extends View {
 			pen.fillStyle = theme.colors.blackish().toHexString();
 			pen.fillRect(0, 0, canvas.width, canvas.height);
 
+			for (const { x, y, width: paintWidth, height: paintHeight, color: name } of state.paints ?? []) {
+				pen.fillStyle = theme.colors.alpha(theme.colors[name], 0.45).toRgbString();
+				pen.fillRect(x * SCALE, y * SCALE, paintWidth * SCALE, paintHeight * SCALE);
+			}
+
 			for (const cup of state.cups) {
 				const { x, y, width: cupWidth, height: cupHeight } = cup;
 				const fill = Math.min(1, cup.count / cup.need);
