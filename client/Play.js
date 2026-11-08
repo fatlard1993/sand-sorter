@@ -1,9 +1,10 @@
-import { Button, Component, Link, styled } from '@vanilla-bean/components';
+import { Button, Component, Link, styled, theme } from '@vanilla-bean/components';
 import { gameContext, getGame, onMessage, socket } from '@fatlard1993/web-game-framework/client';
 import { View } from '@fatlard1993/web-game-framework/ui';
 
 import { STEPS_PER_SECOND, unpack } from '../sand.js';
-import { SCALE, drawBoard } from './drawBoard.js';
+import { SCALE, drawBoard, penHue } from './drawBoard.js';
+import { invite } from './Invite.js';
 import { pickLevel } from './LevelPicker.js';
 import { confetti } from './confetti.js';
 import { sounds } from './sounds.js';
@@ -22,7 +23,7 @@ const Board = styled(
 const Box = styled(
 	Component,
 	({ colors, radius }) => `
-		height: min(64vh, 130vw);
+		height: min(58vh, 120vw);
 		max-width: 100%;
 		aspect-ratio: 80 / 110;
 		border-radius: ${radius.lg};
@@ -38,6 +39,24 @@ const Buttons = styled(
 		display: flex;
 		gap: ${space.lg};
 		font-size: 2.4em;
+	`,
+);
+
+const Team = styled(
+	Component,
+	({ space }) => `
+		display: flex;
+		align-items: center;
+		gap: ${space.sm};
+		font-size: 1.6em;
+	`,
+);
+
+const Friend = styled(
+	Component,
+	({ space }) => `
+		border-bottom: 4px solid;
+		padding: 0 ${space.xs};
 	`,
 );
 
@@ -89,6 +108,21 @@ export default class Play extends View {
 		const { width, height } = game.size;
 		const board = new Board({ appendTo: this._body });
 		const status = new Status({ appendTo: board });
+		const team = new Team({ appendTo: board });
+		let players = game.players;
+
+		const drawTeam = () => {
+			team.empty();
+			for (const player of players)
+				new Friend({
+					appendTo: team,
+					textContent: player.name,
+					style: { borderColor: theme.colors[penHue(players, player.id)].toHexString() },
+				});
+			new Button({ appendTo: team, textContent: '➕👫', onPointerPress: () => invite(gameId) });
+		};
+
+		drawTeam();
 		const box = new Box({ tag: 'canvas', appendTo: board });
 		const canvas = box.elem;
 		const pen = canvas.getContext('2d');
@@ -140,7 +174,7 @@ export default class Play extends View {
 
 		let party;
 		const draw = () => {
-			drawBoard(pen, state, drawing);
+			drawBoard(pen, state, drawing, players, playerId);
 
 			if (party?.(pen)) redraw();
 			else party = undefined;
@@ -254,6 +288,8 @@ export default class Play extends View {
 					if (message.state.wait > 0 && !(state.wait > 0)) sounds.count();
 					state = { ...message.state, grains: unpack(message.sand) };
 					best = message.best ?? best;
+					players = message.players ?? players;
+					drawTeam();
 					reached = message.reached ?? reached;
 				}
 				else if (message.update === 'sand') {

@@ -4,6 +4,15 @@ import { SPOUT_WIDTH, STEPS_PER_SECOND } from '../sand.js';
 
 export const SCALE = 6;
 
+// Each player draws in their own color, in the order they joined
+const penHues = ['teal', 'pink', 'green', 'purple', 'orange', 'blue'];
+
+export const penHue = (players, playerId) => {
+	const at = players.findIndex(({ id }) => id === playerId);
+
+	return penHues[Math.max(0, at) % penHues.length];
+};
+
 const { colors } = theme;
 const cache = {};
 const once = (key, make) => (cache[key] ??= make());
@@ -165,7 +174,7 @@ const drawSpouts = (pen, spouts = []) => {
 	}
 };
 
-export const drawBoard = (pen, state, drawing) => {
+export const drawBoard = (pen, state, drawing, players = [], me) => {
 	const { width, height } = pen.canvas;
 
 	pen.drawImage(backdrop(width, height), 0, 0);
@@ -176,9 +185,10 @@ export const drawBoard = (pen, state, drawing) => {
 
 	for (const wall of state.walls ?? [])
 		strokeLine(pen, wall.map(([x, y]) => [x + 0.5, y + 0.5]), hex(colors.light(colors.gray)));
-	for (const { points } of state.lines)
-		strokeLine(pen, points.map(([x, y]) => [x + 0.5, y + 0.5]), hex(colors.white), rgba(colors.teal, 0.9));
-	if (drawing) strokeLine(pen, drawing, rgba(colors.white, 0.6), rgba(colors.teal, 0.6));
+	for (const { points, by } of state.lines)
+		strokeLine(pen, points.map(([x, y]) => [x + 0.5, y + 0.5]), hex(colors.lightest(colors[penHue(players, by)])), rgba(colors[penHue(players, by)], 0.9));
+	if (drawing)
+		strokeLine(pen, drawing, rgba(colors.lightest(colors[penHue(players, me)]), 0.6), rgba(colors[penHue(players, me)], 0.6));
 
 	for (const [x, y, name, , shade] of state.grains) {
 		pen.fillStyle = sandColor(name, shade);

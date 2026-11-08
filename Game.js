@@ -83,7 +83,7 @@ export default class Game extends BaseGame {
 		if (type === 'line' && Array.isArray(line) && line.length > 0 && line.length < 500) {
 			const points = line.map(([x, y]) => [clamp(x, WIDTH), clamp(y, HEIGHT)]);
 
-			this.state.lines.push({ stroke: String(stroke ?? Math.random()), points });
+			this.state.lines.push({ stroke: String(stroke ?? Math.random()), by: playerId, points });
 			this.state.ink += inkOf(points);
 		}
 
