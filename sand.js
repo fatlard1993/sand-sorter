@@ -138,6 +138,22 @@ export const levels = [
 			{ x: 54, y: 90, width: 14, height: 16, color: 'blue', need: 90 },
 		],
 	},
+	{
+		par: 60,
+		spouts: [{ x: 10, color: 'yellow', amount: 350 }],
+		cups: [{ x: 30, y: 90, width: 14, height: 16, color: 'yellow', need: 120, slide: { from: 30, to: 62, every: 6 } }],
+	},
+	{
+		par: 70,
+		spouts: [
+			{ x: 10, color: 'yellow', amount: 500 },
+			{ x: 40, color: 'blue', amount: 300 },
+		],
+		cups: [
+			{ x: 4, y: 92, width: 14, height: 14, color: 'yellow', need: 80, slide: { from: 4, to: 46, every: 5 } },
+			{ x: 62, y: 92, width: 14, height: 14, color: 'blue', need: 90 },
+		],
+	},
 ];
 
 const index = (x, y) => y * WIDTH + x;
@@ -156,7 +172,8 @@ export const newRound = level => ({
 	lines: [],
 	grains: [],
 	poured: levels[level].spouts.map(() => 0),
-	cups: levels[level].cups.map(cup => ({ ...cup, count: 0 })),
+	cups: levels[level].cups.map(cup => ({ ...cup, count: 0, heading: 1 })),
+	steps: 0,
 	won: false,
 	spoiled: false,
 });
@@ -234,9 +251,36 @@ export const liftOutOfWalls = (round, walls) => {
 };
 
 // One step of falling sand; says whether anything changed
+// A cup with a `slide` moves a cell at a time between its two ends, taking the sand inside it along
+const slideCups = (round, walls) => {
+	let moved = false;
+
+	for (const cup of round.cups) {
+		if (!cup.slide || round.steps % cup.slide.every) continue;
+
+		if (cup.x + cup.heading < cup.slide.from || cup.x + cup.heading > cup.slide.to) cup.heading = -cup.heading;
+
+		const inside = round.grains.filter(([x, y]) => inBox(cup, x, y));
+
+		cup.x += cup.heading;
+		for (const grain of inside) grain[0] += cup.heading;
+		moved = true;
+	}
+
+	if (!moved) return false;
+
+	walls.set(buildWalls(round));
+	liftOutOfWalls(round, walls);
+
+	return true;
+};
+
 export const step = (round, walls) => {
+	round.steps = (round.steps ?? 0) + 1;
+
+	const slid = round.wait > 0 ? false : slideCups(round, walls);
 	const taken = new Uint8Array(walls);
-	let changed = false;
+	let changed = slid;
 
 	for (const [x, y] of round.grains) taken[index(x, y)] = 1;
 
