@@ -154,6 +154,26 @@ export const levels = [
 			{ x: 62, y: 92, width: 14, height: 14, color: 'blue', need: 90 },
 		],
 	},
+	{
+		par: 45,
+		spouts: [
+			{ x: 12, color: 'yellow', amount: 450 },
+			{ x: 66, color: 'blue', amount: 600 },
+		],
+		winds: [{ x: 0, y: 28, width: 38, height: 10, blow: 1 }],
+		paints: [{ x: 42, y: 54, width: 14, height: 8, color: 'red' }],
+		walls: [
+			[
+				[40, 70],
+				[40, 105],
+			],
+		],
+		cups: [
+			{ x: 2, y: 92, width: 14, height: 14, color: 'yellow', need: 100, slide: { from: 2, to: 22, every: 6 } },
+			{ x: 43, y: 92, width: 14, height: 14, color: 'red', need: 100 },
+			{ x: 62, y: 92, width: 14, height: 14, color: 'blue', need: 100 },
+		],
+	},
 ];
 
 const index = (x, y) => y * WIDTH + x;
