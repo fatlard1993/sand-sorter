@@ -4,6 +4,7 @@ import { View } from '@fatlard1993/web-game-framework/ui';
 
 import { STEPS_PER_SECOND, unpack } from '../sand.js';
 import { SCALE, drawBoard } from './drawBoard.js';
+import { pickLevel } from './LevelPicker.js';
 import { sounds } from './sounds.js';
 
 const Board = styled(
@@ -100,6 +101,18 @@ export default class Play extends View {
 			textContent: '🔄',
 			appendTo: buttons,
 			onPointerPress: () => socket.send({ gameId, playerId, type: 'restart' }),
+		});
+		let best = game.best ?? {};
+
+		new Button({
+			textContent: '🗺️',
+			appendTo: buttons,
+			onPointerPress: () =>
+				pickLevel({
+					count: game.levelCount,
+					best,
+					onPick: level => socket.send({ gameId, playerId, type: 'level', level }),
+				}),
 		});
 		const next = new Button({
 			textContent: '➡️',
@@ -227,6 +240,7 @@ export default class Play extends View {
 				if (message.update === 'state') {
 					if (message.state.wait > 0 && !(state.wait > 0)) sounds.count();
 					state = { ...message.state, grains: unpack(message.sand) };
+					best = message.best ?? best;
 				}
 				else if (message.update === 'sand') {
 					const { sand, cups, won, spoiled, wait, stars } = message;

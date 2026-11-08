@@ -13,6 +13,7 @@ export default class Game extends BaseGame {
 		super(options);
 
 		this.state = options.saveState?.state?.lines?.every(line => line.points) ? options.saveState.state : newRound(0);
+		this.best = options.saveState?.best ?? {};
 		this.walls = buildWalls(this.state);
 
 		this.timer = setInterval(() => {
@@ -39,28 +40,39 @@ export default class Game extends BaseGame {
 
 		if (!changed) return;
 
-		const { grains, cups, won, spoiled, wait, stars } = this.state;
+		const { grains, cups, won, spoiled, wait, stars, level } = this.state;
+
+		if (won && !(this.best[level] >= stars)) {
+			this.best[level] = stars;
+			this.announce();
+		}
 
 		this.broadcast('sand', { sand: pack(grains), cups, won, spoiled, wait, stars });
 		this.save();
 	}
 
 	toClient() {
-		return { ...super.toClient(), state: this.state, size: { width: WIDTH, height: HEIGHT } };
+		return {
+			...super.toClient(),
+			state: this.state,
+			best: this.best,
+			levelCount: levels.length,
+			size: { width: WIDTH, height: HEIGHT },
+		};
 	}
 
 	toSaveState() {
-		return { ...super.toSaveState(), state: this.state };
+		return { ...super.toSaveState(), state: this.state, best: this.best };
 	}
 
 	announce() {
 		const { grains, ...state } = this.state;
 
-		this.broadcast('state', { state, sand: pack(grains), players: [...this.players.values()] });
+		this.broadcast('state', { state, best: this.best, sand: pack(grains), players: [...this.players.values()] });
 	}
 
 	// Something a player did, from their page: { gameId, playerId, type, ...whatever the type carries }
-	receive({ type, playerId, line, stroke, at }) {
+	receive({ type, playerId, line, stroke, at, level }) {
 		if (!this.players.has(playerId)) return;
 
 		const clamp = (value, max) => Math.max(0, Math.min(max - 1, Math.round(Number(value) || 0)));
@@ -82,6 +94,8 @@ export default class Game extends BaseGame {
 		}
 
 		if (type === 'restart') this.state = newRound(this.state.level);
+
+		if (type === 'level' && Number.isInteger(level) && level >= 0 && level < levels.length) this.state = newRound(level);
 
 		if (type === 'next' && this.state.won) this.state = newRound((this.state.level + 1) % levels.length);
 
