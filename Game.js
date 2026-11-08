@@ -77,7 +77,7 @@ export default class Game extends BaseGame {
 	receive({ type, playerId, line, stroke, at, level }) {
 		if (!this.players.has(playerId)) return;
 
-		const clamp = (value, max) => Math.max(0, Math.min(max - 1, Math.round(Number(value) || 0)));
+		const clamp = (value, max) => Math.max(0, Math.min(max - 1, Math.round((Number(value) || 0) * 10) / 10));
 
 		// A line arrives a piece at a time; its pieces share the stroke they were drawn in, so they erase together
 		if (type === 'line' && Array.isArray(line) && line.length > 0 && line.length < 500) {
@@ -106,6 +106,7 @@ export default class Game extends BaseGame {
 
 		this.walls = buildWalls(this.state);
 		liftOutOfWalls(this.state, this.walls);
+		this.state.still = 0;
 		this.announce();
 	}
 

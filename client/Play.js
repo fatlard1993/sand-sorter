@@ -159,6 +159,7 @@ export default class Play extends View {
 
 		let state = game.state;
 		let drawing = null;
+		let settling = null;
 		let stroke;
 		let tool = 'pen';
 
@@ -174,7 +175,7 @@ export default class Play extends View {
 
 		let party;
 		const draw = () => {
-			drawBoard(pen, state, drawing, players, playerId);
+			drawBoard(pen, state, drawing ?? settling, players, playerId);
 
 			if (party?.(pen)) redraw();
 			else party = undefined;
@@ -185,14 +186,28 @@ export default class Play extends View {
 			next.elem.style.display = state.won ? '' : 'none';
 		};
 
+		// Grid units, kept to a tenth so the line follows the finger instead of stepping cell to cell
 		const toGrid = ({ clientX, clientY }) => {
 			const rect = canvas.getBoundingClientRect();
+			const tenth = value => Math.round(value * 10) / 10;
 
-			return [Math.round(((clientX - rect.left) / rect.width) * width), Math.round(((clientY - rect.top) / rect.height) * height)];
+			return [tenth(((clientX - rect.left) / rect.width) * width), tenth(((clientY - rect.top) / rect.height) * height)];
 		};
 
 		let erasing = false;
 		const erase = event => socket.send({ gameId, playerId, type: 'erase', at: toGrid(event) });
+
+		// The whole stroke stays on screen as drawn; it goes to the server a piece at a time, so it catches sand before the
+		// finger lifts, and stays drawn here until the server's picture has it
+		let sentUpTo = 0;
+		let sentAt = 0;
+		const sendPiece = () => {
+			if (!drawing || drawing.length - 1 <= sentUpTo) return;
+
+			socket.send({ gameId, playerId, type: 'line', line: drawing.slice(sentUpTo), stroke });
+			sentUpTo = drawing.length - 1;
+			sentAt = Date.now();
+		};
 
 		canvas.addEventListener('pointerdown', event => {
 			canvas.setPointerCapture(event.pointerId);
@@ -206,18 +221,10 @@ export default class Play extends View {
 
 			stroke = `${playerId}${Date.now()}`;
 			drawing = [toGrid(event)];
+			sentUpTo = 0;
 			sentAt = Date.now();
 			redraw();
 		});
-		// The line goes to the server a piece at a time as it's drawn, so it catches sand before the finger lifts
-		let sentAt = 0;
-		const sendPiece = () => {
-			if (!drawing || drawing.length < 2) return;
-
-			socket.send({ gameId, playerId, type: 'line', line: drawing, stroke });
-			drawing = [drawing.at(-1)];
-			sentAt = Date.now();
-		};
 
 		canvas.addEventListener('pointermove', event => {
 			if (erasing && Date.now() - sentAt > 50) {
@@ -225,12 +232,14 @@ export default class Play extends View {
 				sentAt = Date.now();
 			}
 
-			if (!drawing) return;
+			if (!drawing || tool !== 'pen') return;
 
 			const point = toGrid(event);
 			const last = drawing.at(-1);
 
-			if (point[0] !== last[0] || point[1] !== last[1]) drawing.push(point);
+			if (Math.hypot(point[0] - last[0], point[1] - last[1]) < 1) return;
+
+			drawing.push(point);
 			if (Date.now() - sentAt > 80) sendPiece();
 			redraw();
 		});
@@ -241,6 +250,7 @@ export default class Play extends View {
 
 			if (drawing.length === 1) socket.send({ gameId, playerId, type: 'line', line: drawing, stroke });
 			else sendPiece();
+			settling = drawing;
 			drawing = null;
 			redraw();
 		};
@@ -285,6 +295,7 @@ export default class Play extends View {
 				if (message.gameId !== gameId) return;
 
 				if (message.update === 'state') {
+					settling = null;
 					if (message.state.wait > 0 && !(state.wait > 0)) sounds.count();
 					state = { ...message.state, grains: unpack(message.sand) };
 					best = message.best ?? best;

@@ -72,10 +72,19 @@ const strokeLine = (pen, points, style, glow) => {
 		pen.shadowColor = glow;
 		pen.shadowBlur = SCALE * 2;
 	}
+	// Through the midpoints between points, curving at each point, so a hand-drawn line comes out smooth
+	const at = index => [(points[index][0] - 0.5) * SCALE, (points[index][1] - 0.5) * SCALE];
+
 	pen.beginPath();
-	pen.moveTo((points[0][0] - 0.5) * SCALE, (points[0][1] - 0.5) * SCALE);
-	for (const [x, y] of points) pen.lineTo((x - 0.5) * SCALE, (y - 0.5) * SCALE);
-	if (points.length === 1) pen.lineTo((points[0][0] - 0.5) * SCALE + 0.1, (points[0][1] - 0.5) * SCALE);
+	pen.moveTo(...at(0));
+	if (points.length === 1) pen.lineTo(at(0)[0] + 0.1, at(0)[1]);
+	for (let index = 1; index < points.length - 1; index++) {
+		const [x, y] = at(index);
+		const [nextX, nextY] = at(index + 1);
+
+		pen.quadraticCurveTo(x, y, (x + nextX) / 2, (y + nextY) / 2);
+	}
+	if (points.length > 1) pen.lineTo(...at(points.length - 1));
 	pen.stroke();
 	pen.restore();
 };
@@ -188,7 +197,7 @@ export const drawBoard = (pen, state, drawing, players = [], me) => {
 	for (const { points, by } of state.lines)
 		strokeLine(pen, points.map(([x, y]) => [x + 0.5, y + 0.5]), hex(colors.lightest(colors[penHue(players, by)])), rgba(colors[penHue(players, by)], 0.9));
 	if (drawing)
-		strokeLine(pen, drawing, rgba(colors.lightest(colors[penHue(players, me)]), 0.6), rgba(colors[penHue(players, me)], 0.6));
+		strokeLine(pen, drawing.map(([x, y]) => [x + 0.5, y + 0.5]), rgba(colors.lightest(colors[penHue(players, me)]), 0.6), rgba(colors[penHue(players, me)], 0.6));
 
 	for (const [x, y, name, , shade] of state.grains) {
 		pen.fillStyle = sandColor(name, shade);
