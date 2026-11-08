@@ -13,8 +13,7 @@ const router = server => async request => (await routes(request, server)) ?? ser
 // The save file's folder has to exist before the database opens it
 mkdirSync('./data', { recursive: true });
 
-// 3000 when it's free, or else any free port, so two games can run side by side; PORT names one outright. Chosen once
-// per process: `bun --hot` runs this file again on each change, and the server keeps its port through that.
+// 3000 when it's free, or else any free port, so two games can run side by side; PORT names one outright
 const freePort = wanted => {
 	try {
 		Bun.serve({ port: wanted, fetch: () => new Response() }).stop(true);
