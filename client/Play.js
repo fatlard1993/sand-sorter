@@ -1,6 +1,8 @@
-import { Button, Component, Link, styled } from '@vanilla-bean/components';
+import { Button, Component, Link, styled, theme } from '@vanilla-bean/components';
 import { gameContext, getGame, onMessage, socket } from '@fatlard1993/web-game-framework/client';
 import { View } from '@fatlard1993/web-game-framework/ui';
+
+const SCALE = 6;
 
 const Board = styled(
 	Component,
@@ -8,38 +10,36 @@ const Board = styled(
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: ${space.xl};
-		padding: ${space.xl};
+		gap: ${space.md};
+		padding: ${space.md};
 	`,
 );
 
-const Tap = styled(
-	Button,
-	({ colors, radius }) => `
-		width: min(60vw, 240px);
-		height: min(60vw, 240px);
-		border-radius: ${radius.pill};
-		background: ${colors.blue};
-		font-size: 5rem;
-
-		&:active {
-			transform: scale(0.94);
-		}
-	`,
-);
-
-const Scores = styled(
+const Box = styled(
 	Component,
-	({ space }) => `
-		display: flex;
-		flex-direction: column;
-		gap: ${space.sm};
-		font-size: 1.4em;
+	({ colors, radius }) => `
+		height: min(72vh, 140vw);
+		max-width: 100%;
+		aspect-ratio: 80 / 110;
+		border-radius: ${radius.md};
+		border: 2px solid ${colors.border};
+		touch-action: none;
+		cursor: crosshair;
 	`,
 );
 
-// One player's screen: a big button, and everyone's taps. What it shows comes from the server's state and nothing
-// else: a tap sends a message, and the number changes when the new state comes back, on this screen and every other.
+const Status = styled(
+	Component,
+	() => `
+		font-size: 1.6em;
+		min-height: 1.4em;
+	`,
+);
+
+const color = name => theme.colors.light(theme.colors[name]).toHexString();
+
+// One player's screen: the sand box. The sand falls on the server; a line drawn here is sent there, and shows up on
+// every screen once it comes back.
 export default class Play extends View {
 	static schema = { gameId: {} };
 
@@ -63,7 +63,6 @@ export default class Play extends View {
 		const playerId = localStorage.getItem(gameId);
 		const { body: game, response } = await getGame(gameId, { invalidateAfter: 0 });
 
-		// Not in this game (or the game is gone): the join page sorts it out
 		if (response.status !== 200 || !game.players.some(({ id }) => id === playerId)) {
 			window.location.href = `#/join/${gameId}`;
 
@@ -74,26 +73,115 @@ export default class Play extends View {
 		gameContext.playerId = playerId;
 		this._toolbar.options.heading = game.name;
 
+		const { width, height } = game.size;
 		const board = new Board({ appendTo: this._body });
-		const scores = new Scores();
+		const status = new Status({ appendTo: board });
+		const box = new Box({ tag: 'canvas', appendTo: board });
+		const canvas = box.elem;
+		const pen = canvas.getContext('2d');
 
-		new Tap({
-			textContent: '⭐',
+		canvas.width = width * SCALE;
+		canvas.height = height * SCALE;
+
+		new Button({
+			textContent: '🔄 Again',
 			appendTo: board,
-			onPointerPress: () => socket.send({ gameId, playerId, type: 'tap' }),
+			onPointerPress: () => socket.send({ gameId, playerId, type: 'restart' }),
 		});
-		board.append(scores);
 
-		const draw = ({ players, state }) => {
-			scores.empty();
-			for (const player of players)
-				new Component({ appendTo: scores, textContent: `${player.name}: ${state.taps[player.id] ?? 0}` });
+		let state = game.state;
+		let drawing = null;
+
+		const strokeLine = (points, style) => {
+			if (!points.length) return;
+
+			pen.strokeStyle = style;
+			pen.lineWidth = SCALE * 2;
+			pen.lineCap = 'round';
+			pen.lineJoin = 'round';
+			pen.beginPath();
+			pen.moveTo((points[0][0] - 0.5) * SCALE, (points[0][1] - 0.5) * SCALE);
+			for (const [x, y] of points) pen.lineTo((x - 0.5) * SCALE, (y - 0.5) * SCALE);
+			if (points.length === 1) pen.lineTo((points[0][0] - 0.5) * SCALE + 0.1, (points[0][1] - 0.5) * SCALE);
+			pen.stroke();
 		};
 
-		draw(game);
+		const draw = () => {
+			pen.fillStyle = theme.colors.blackish().toHexString();
+			pen.fillRect(0, 0, canvas.width, canvas.height);
+
+			for (const cup of state.cups) {
+				const { x, y, width: cupWidth, height: cupHeight } = cup;
+				const fill = Math.min(1, cup.count / cup.need);
+
+				pen.fillStyle = theme.colors.alpha(theme.colors[cup.color], 0.25).toRgbString();
+				pen.fillRect(x * SCALE, (y + cupHeight * (1 - fill)) * SCALE, cupWidth * SCALE, cupHeight * fill * SCALE);
+				strokeLine(
+					[
+						[x + 0.5, y],
+						[x + 0.5, y + cupHeight + 0.5],
+						[x + cupWidth + 0.5, y + cupHeight + 0.5],
+						[x + cupWidth + 0.5, y],
+					],
+					color('gray'),
+				);
+			}
+
+			for (const line of state.lines) strokeLine(line.map(([x, y]) => [x + 0.5, y + 0.5]), theme.colors.white.toHexString());
+			if (drawing) strokeLine(drawing, theme.colors.alpha(theme.colors.white, 0.6).toRgbString());
+
+			for (const [x, y, name] of state.grains) {
+				pen.fillStyle = color(name);
+				pen.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+			}
+
+			const cup = state.cups[0];
+
+			status.elem.textContent = state.won ? '🎉 You did it!' : `🪣 ${cup.count} / ${cup.need}`;
+		};
+
+		const toGrid = ({ clientX, clientY }) => {
+			const rect = canvas.getBoundingClientRect();
+
+			return [Math.round(((clientX - rect.left) / rect.width) * width), Math.round(((clientY - rect.top) / rect.height) * height)];
+		};
+
+		canvas.addEventListener('pointerdown', event => {
+			canvas.setPointerCapture(event.pointerId);
+			drawing = [toGrid(event)];
+			draw();
+		});
+		canvas.addEventListener('pointermove', event => {
+			if (!drawing) return;
+
+			const point = toGrid(event);
+			const last = drawing.at(-1);
+
+			if (point[0] !== last[0] || point[1] !== last[1]) drawing.push(point);
+			draw();
+		});
+		const finish = () => {
+			if (!drawing) return;
+
+			socket.send({ gameId, playerId, type: 'line', line: drawing });
+			drawing = null;
+		};
+
+		canvas.addEventListener('pointerup', finish);
+		canvas.addEventListener('pointercancel', finish);
+
+		draw();
 		this.addCleanup(
 			'socket',
-			onMessage(message => message.gameId === gameId && message.update === 'state' && draw(message)),
+			onMessage(message => {
+				if (message.gameId !== gameId) return;
+
+				if (message.update === 'state') state = message.state;
+				else if (message.update === 'sand') state = { ...state, ...message };
+				else return;
+
+				draw();
+			}),
 		);
 	}
 }

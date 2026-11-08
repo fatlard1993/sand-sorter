@@ -1,37 +1,65 @@
 import { Game as BaseGame } from '@fatlard1993/web-game-framework';
 
-// One running game, on the server. `state` is what's true for everyone in it; every change to it is broadcast, and the
-// players' pages redraw from what arrives (client/Play.js) rather than from what they did. Change `state`, `receive`
-// and Play together: they are the three ends of one wire.
+import { HEIGHT, WIDTH, buildWalls, newRound, step } from './sand.js';
+
+const TICK_MS = 50;
+
+// `bun --hot` makes new games from the save file on every change; one timer per game id keeps the old ones from ticking
+globalThis.sandTimers ??= {};
+
+// One running game, on the server. `state` is the round: its lines, its sand, its cups. The sand falls here, and every
+// page draws what it's sent (client/Play.js).
 export default class Game extends BaseGame {
 	constructor(options) {
 		super(options);
 
-		// Back from the save file after a restart, or new
-		this.state = options.saveState?.state ?? { taps: {} };
+		this.state = options.saveState?.state?.cups ? options.saveState.state : newRound(0);
+		this.walls = buildWalls(this.state);
+
+		clearInterval(globalThis.sandTimers[this.id]);
+		globalThis.sandTimers[this.id] = setInterval(() => this.tick(), TICK_MS);
 	}
 
-	// What a player's page gets when it asks for the game
+	tick() {
+		if (this.server?.games[this.id] !== this) {
+			clearInterval(globalThis.sandTimers[this.id]);
+
+			return;
+		}
+
+		if (!this.players.size || !step(this.state, this.walls)) return;
+
+		const { grains, cups, won } = this.state;
+
+		this.broadcast('sand', { grains, cups, won });
+		this.save();
+	}
+
 	toClient() {
-		return { ...super.toClient(), state: this.state };
+		return { ...super.toClient(), state: this.state, size: { width: WIDTH, height: HEIGHT } };
 	}
 
-	// What survives a restart (data/games.json)
 	toSaveState() {
 		return { ...super.toSaveState(), state: this.state };
 	}
 
-	// The whole picture to every page: the state and who's playing
 	announce() {
 		this.broadcast('state', { state: this.state, players: [...this.players.values()] });
 	}
 
 	// Something a player did, from their page: { gameId, playerId, type, ...whatever the type carries }
-	receive({ type, playerId }) {
+	receive({ type, playerId, line }) {
 		if (!this.players.has(playerId)) return;
 
-		if (type === 'tap') this.state.taps[playerId] = (this.state.taps[playerId] ?? 0) + 1;
+		if (type === 'line' && Array.isArray(line) && line.length > 0 && line.length < 500) {
+			const clamp = (value, max) => Math.max(0, Math.min(max - 1, Math.round(Number(value) || 0)));
 
+			this.state.lines.push(line.map(([x, y]) => [clamp(x, WIDTH), clamp(y, HEIGHT)]));
+		}
+
+		if (type === 'restart') this.state = newRound(this.state.level);
+
+		this.walls = buildWalls(this.state);
 		this.announce();
 	}
 
@@ -39,8 +67,7 @@ export default class Game extends BaseGame {
 		this.announce();
 	}
 
-	onPlayerRemoved(playerId) {
-		delete this.state.taps[playerId];
+	onPlayerRemoved() {
 		this.announce();
 	}
 }
