@@ -30,8 +30,8 @@ const Stars = styled(
 	`,
 );
 
-// Every level as a big number with the best stars won on it; a tap goes there
-export const pickLevel = ({ count, best, onPick }) => {
+// Every level as a big number with the best stars won on it; a tap goes there. Levels not reached yet are locked.
+export const pickLevel = ({ count, best, reached, onPick }) => {
 	const grid = new Grid();
 	const dialog = new Dialog({
 		header: '🗺️',
@@ -41,16 +41,23 @@ export const pickLevel = ({ count, best, onPick }) => {
 		onButtonPress: ({ closeDialog }) => closeDialog(),
 	});
 
-	for (let level = 0; level < count; level++)
+	for (let level = 0; level < count; level++) {
+		const locked = level > reached;
+
 		new Level({
 			appendTo: grid,
+			disabled: locked,
+			style: locked ? { opacity: 0.4 } : {},
 			append: [
-				new Component({ textContent: String(level + 1) }),
+				new Component({ textContent: locked ? '🔒' : String(level + 1) }),
 				new Stars({ textContent: best[level] ? '⭐'.repeat(best[level]) : '' }),
 			],
 			onPointerPress: () => {
+				if (locked) return;
+
 				onPick(level);
 				dialog.close();
 			},
 		});
+	}
 };

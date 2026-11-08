@@ -103,6 +103,7 @@ export default class Play extends View {
 			onPointerPress: () => socket.send({ gameId, playerId, type: 'restart' }),
 		});
 		let best = game.best ?? {};
+		let reached = game.reached ?? 0;
 
 		new Button({
 			textContent: '🗺️',
@@ -111,6 +112,7 @@ export default class Play extends View {
 				pickLevel({
 					count: game.levelCount,
 					best,
+					reached,
 					onPick: level => socket.send({ gameId, playerId, type: 'level', level }),
 				}),
 		});
@@ -241,6 +243,7 @@ export default class Play extends View {
 					if (message.state.wait > 0 && !(state.wait > 0)) sounds.count();
 					state = { ...message.state, grains: unpack(message.sand) };
 					best = message.best ?? best;
+					reached = message.reached ?? reached;
 				}
 				else if (message.update === 'sand') {
 					const { sand, cups, won, spoiled, wait, stars } = message;

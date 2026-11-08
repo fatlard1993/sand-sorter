@@ -14,6 +14,7 @@ export default class Game extends BaseGame {
 
 		this.state = options.saveState?.state?.lines?.every(line => line.points) ? options.saveState.state : newRound(0);
 		this.best = options.saveState?.best ?? {};
+		this.reached = options.saveState?.reached ?? this.state.level;
 		this.walls = buildWalls(this.state);
 
 		this.timer = setInterval(() => {
@@ -56,19 +57,20 @@ export default class Game extends BaseGame {
 			...super.toClient(),
 			state: this.state,
 			best: this.best,
+			reached: this.reached,
 			levelCount: levels.length,
 			size: { width: WIDTH, height: HEIGHT },
 		};
 	}
 
 	toSaveState() {
-		return { ...super.toSaveState(), state: this.state, best: this.best };
+		return { ...super.toSaveState(), state: this.state, best: this.best, reached: this.reached };
 	}
 
 	announce() {
 		const { grains, ...state } = this.state;
 
-		this.broadcast('state', { state, best: this.best, sand: pack(grains), players: [...this.players.values()] });
+		this.broadcast('state', { state, best: this.best, reached: this.reached, sand: pack(grains), players: [...this.players.values()] });
 	}
 
 	// Something a player did, from their page: { gameId, playerId, type, ...whatever the type carries }
@@ -95,9 +97,12 @@ export default class Game extends BaseGame {
 
 		if (type === 'restart') this.state = newRound(this.state.level);
 
-		if (type === 'level' && Number.isInteger(level) && level >= 0 && level < levels.length) this.state = newRound(level);
+		if (type === 'level' && Number.isInteger(level) && level >= 0 && level <= this.reached) this.state = newRound(level);
 
-		if (type === 'next' && this.state.won) this.state = newRound((this.state.level + 1) % levels.length);
+		if (type === 'next' && this.state.won) {
+			this.state = newRound((this.state.level + 1) % levels.length);
+			this.reached = Math.max(this.reached, this.state.level);
+		}
 
 		this.walls = buildWalls(this.state);
 		liftOutOfWalls(this.state, this.walls);
