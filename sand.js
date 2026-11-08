@@ -338,5 +338,13 @@ export const step = (round, walls) => {
 		round.stars = round.ink <= round.par ? 3 : round.ink <= round.par * 2 ? 2 : 1;
 	}
 
+	// Every spout empty and the sand gone still, without the cups full: the round is over
+	const pouredAll = round.spouts.every((spout, at) => round.poured[at] >= spout.amount);
+
+	if (!changed && pouredAll && !round.won && !round.spoiled) {
+		round.spoiled = true;
+		changed = true;
+	}
+
 	return changed;
 };
