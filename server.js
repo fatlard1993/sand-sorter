@@ -5,6 +5,10 @@ import { Server, basicGameRoutes } from '@fatlard1993/web-game-framework';
 
 import Game from './Game.js';
 
+// A page rebuild that fails rejects with no one listening, and left unheard that stops every timer in the server,
+// sand included, until a restart. Heard here, it's only a line in the log.
+process.on('unhandledRejection', error => console.error('Unhandled rejection:', error?.message ?? error));
+
 const routes = basicGameRoutes();
 
 // The games' routes (list, create, join, exit, delete), then the built page and the files it loads

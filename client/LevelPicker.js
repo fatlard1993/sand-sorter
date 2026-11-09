@@ -22,6 +22,17 @@ const Level = styled(
 	`,
 );
 
+// A world's picture across the whole row, starting its group of levels
+const World = styled(
+	Component,
+	({ space }) => `
+		grid-column: 1 / -1;
+		text-align: center;
+		font-size: 2rem;
+		padding-top: ${space.sm};
+	`,
+);
+
 const Stars = styled(
 	Component,
 	() => `
@@ -30,8 +41,9 @@ const Stars = styled(
 	`,
 );
 
-// Every level as a big number with the best stars won on it; a tap goes there. Levels not reached yet are locked.
-export const pickLevel = ({ count, best, reached, onPick }) => {
+// Every level as a big number with the most grains caught on it, grouped by world; a tap goes there. Levels not
+// reached yet are locked.
+export const pickLevel = ({ count, worlds = [], best, reached, onPick }) => {
 	const grid = new Grid();
 	const dialog = new Dialog({
 		header: '🗺️',
@@ -41,8 +53,18 @@ export const pickLevel = ({ count, best, reached, onPick }) => {
 		onButtonPress: ({ closeDialog }) => closeDialog(),
 	});
 
+	const starts = new Map();
+
+	worlds.reduce((first, world) => {
+		starts.set(first, world);
+
+		return first + world.count;
+	}, 0);
+
 	for (let level = 0; level < count; level++) {
 		const locked = level > reached;
+
+		if (starts.has(level)) new World({ appendTo: grid, textContent: starts.get(level).icon });
 
 		new Level({
 			appendTo: grid,
@@ -50,7 +72,7 @@ export const pickLevel = ({ count, best, reached, onPick }) => {
 			style: locked ? { opacity: 0.4 } : {},
 			append: [
 				new Component({ textContent: locked ? '🔒' : String(level + 1) }),
-				new Stars({ textContent: best[level] ? '⭐'.repeat(best[level]) : '' }),
+				new Stars({ textContent: best[level] ? `⏳ ${best[level]}` : '' }),
 			],
 			onPointerPress: () => {
 				if (locked) return;
