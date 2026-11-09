@@ -2,17 +2,36 @@
 
 ![Sand pouring down a drawn line into its jar](screenshot.png)
 
-Sand pours from the sky. Draw lines to catch it and roll it into the jar of its own color, before it all runs out. Fewer lines win more stars.
+Sand pours from the sky. Draw lines to catch it and roll it into the jar of its own color. Fill every jar to win, then watch the score count up: every grain in the right jar is a point.
 
 Ben dreamed this game up and keeps deciding what it does next; Claude, by way of [paude](https://github.com/fatlard1993/paude), does the building.
 
 ## Playing
 
 - **Draw** with a finger or the mouse: a line catches sand the moment it's drawn. The **sponge** rubs lines out.
-- **Fill each jar** with its own color. Wrong-color sand in a jar spoils the round, and the round ends when the sand runs out short.
-- **47 levels** across eight worlds, easy to hard: paint boxes that change sand's color, wind, jars and walls that slide, big and tiny sand with a sieve to split them, ice, lava and water, monsters that sneak in to eat the sand, and a big final level with everything at once.
+- **Win** by filling every jar with as much of its own color as it asks for. If the sand runs out and sits still for five seconds with a jar still short, the round is lost (❌): tap 🔄 to try again.
+- **The score** is counted grain by grain once a won round settles:
+  - **+1** for each grain in the jar of its own color.
+  - **+3** for gold, which a wish drops: tap a shooting star as it flies by.
+  - **+10** for a gem, which turns up now and then in the pour.
+  - Gold and gems count in any jar.
+  - **-1** for each grain in a jar of the wrong color.
+  - **-1** for each bit of line, as the lines are rubbed out at the end. Short lines score more.
+
+  Each level keeps its best score, and beating it is a party. ⏳ at the top is the best of every level added up.
+- **47 levels** across eight worlds, each opened by winning the one before; 🗺️ picks any level already reached. Along the way:
+  - paint boxes that change sand's color, and wind
+  - jars, spouts and walls that slide
+  - big and tiny sand, with a sieve pen to split them
+  - gray dirt that belongs in no jar, and water to wash it away
+  - whirlwinds that mix colors
+  - ice that sand skates along
+  - lava that burns sand up, and turns to rock where water meets it
+  - a volcano that shoots sand up
+  - monsters that sneak in to eat a jar's sand until a tap bonks them home
+
+  Some levels hand out extra tools too: water pools or whirlwinds of your own to drop in. The big final level throws a moving spout, wind, a moving wall and paint in all at once.
 - **Play together**: anyone who joins draws in their own color on the same board. The ➕👫 button shows a QR code for a phone to join with.
-- Tap a shooting star to make a wish.
 
 ## Running it
 
