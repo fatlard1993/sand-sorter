@@ -1,3 +1,8 @@
 node_modules
 client/build
 data
+
+# paude session files, rewritten each sitting
+.claude/
+CLAUDE.local.md
+.paude-arcade.md
