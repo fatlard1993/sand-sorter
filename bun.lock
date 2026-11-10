@@ -5,7 +5,7 @@
     "": {
       "name": "sand-sorter",
       "dependencies": {
-        "@fatlard1993/web-game-framework": "github:fatlard1993/web-game-framework#bd90b79",
+        "@fatlard1993/web-game-framework": "github:fatlard1993/web-game-framework#0d86ecd",
         "@vanilla-bean/components": "^7.0.2",
       },
     },
@@ -13,7 +13,7 @@
   "packages": {
     "@ctrl/tinycolor": ["@ctrl/tinycolor@4.3.0", "", {}, "sha512-6V0+8vw/GmH92URQ/Ki12FPhoB3nqaQUJE+5xgbFbB5ok0OXYK5jCQsQQoyR3BzCddHsCpyCFRnIcI1PSOVYkQ=="],
 
-    "@fatlard1993/web-game-framework": ["@fatlard1993/web-game-framework@github:fatlard1993/web-game-framework#bd90b79", { "dependencies": { "lowdb": "^7.0.1", "nanoid": "^6.0.0", "qrcode": "^1.5.4" }, "peerDependencies": { "@vanilla-bean/components": "^7.0.0" }, "bin": { "new-game": "./bin/new-game.js" } }, "fatlard1993-web-game-framework-bd90b79", "sha512-8AmY7WiYkgw3Zc4Cr72Qi9OgDo/042TXz3uUG3L/Qg0PIzceB3it62CRfHa69WawcdtOzZmfwkQGpCZZYfrNiA=="],
+    "@fatlard1993/web-game-framework": ["@fatlard1993/web-game-framework@github:fatlard1993/web-game-framework#0d86ecd", { "dependencies": { "lowdb": "^7.0.1", "nanoid": "^6.0.0", "qrcode": "^1.5.4" }, "peerDependencies": { "@vanilla-bean/components": "^7.0.0" }, "bin": { "new-game": "./bin/new-game.js" } }, "fatlard1993-web-game-framework-0d86ecd", "sha512-OY5uAB0b+J3+QknwLKg/Wxx/cdIa/UPw1TNxKLpP0Yzfb2jJztW4L2FIU1SVW51BfW22sqZApCpbAhjioaLDOg=="],
 
     "@fontsource-variable/kode-mono": ["@fontsource-variable/kode-mono@5.3.0", "", {}, "sha512-U5nNDAkv9c5jgMnom649alsS3CxlSsPM5SKSfpnWuUNDV65keYVCIZWnxf9/mFJZg6SWussoHQ6D4t//l9grQw=="],
 
